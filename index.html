@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kabur dari Bu Rina! — Level 1 (Target 1.500 m)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: #0f172a;
+      color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .game-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100dvh;
+      background: #1e293b;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    }
+
+    /* TOP HUD */
+    .top-hud {
+      background: rgba(15, 23, 42, 0.96);
+      color: #fff;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .hud-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .badge {
+      background: rgba(255, 255, 255, 0.14);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .badge-level { background: #a855f7; color: #ffffff; }
+    .badge-score { background: #fbbf24; color: #451a03; }
+    .badge-dist { background: #38bdf8; color: #082f49; }
+    .btn-mini {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* PLAYER IDENTITY STRIP */
+    .player-strip {
+      background: #1e293b;
+      color: #fde68a;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 20;
+    }
+
+    /* PROXIMITY BAR */
+    .chase-bar-wrap {
+      background: #0f172a;
+      padding: 6px 12px 8px;
+      color: #e2e8f0;
+      font-size: 0.72rem;
+      font-weight: 800;
+      z-index: 20;
+    }
+    .chase-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .chase-track {
+      height: 8px;
+      background: #334155;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .chase-fill {
+      height: 100%;
+      width: 68%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+      transition: width 0.25s ease;
+    }
+
+    /* TRACK AREA WITH CLEAN WHITE-FLOOR CLASSROOM BACKGROUND */
+    .track-stage {
+      position: relative;
+      flex: 1;
+      background: url("kelas-lintasan.png") center / cover no-repeat;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .lanes-grid {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: transparent;
+    }
+    .lane {
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .lane.active-lane {
+      background: rgba(37, 99, 235, 0.08);
+    }
+    .lane-label {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.82);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .lane.active-lane .lane-label {
+      background: #fbbf24;
+      color: #451a03;
+      border-color: #fef08a;
+    }
+
+    /* DUA BARIS MEJA & KURSI SEBAGAI PEMISAH ANTARJALUR */
+    .desk-row-divider {
+      position: absolute;
+      top: -120px;
+      width: 48px;
+      margin-left: -24px;
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      filter: drop-shadow(0 5px 7px rgba(15, 23, 42, 0.28));
+    }
+    .desk-top {
+      width: 44px;
+      height: 22px;
+      background: linear-gradient(180deg, #d97706, #b45309);
+      border: 2px solid #78350f;
+      border-radius: 5px;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.28);
+    }
+    .chair-top {
+      width: 28px;
+      height: 14px;
+      background: linear-gradient(180deg, #64748b, #475569);
+      border: 2px solid #1e293b;
+      border-radius: 4px;
+    }
+
+    /* MOVING ITEMS & OBSTACLES */
+    .item-entity {
+      position: absolute;
+      top: -50px;
+      width: 44px;
+      height: 44px;
+      margin-left: -22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.55rem;
+      z-index: 7;
+      filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.35));
+    }
+
+    /* CHARACTERS (MURID & BU RINA) */
+    .char-box {
+      position: absolute;
+      left: 50%;
+      margin-left: -32px;
+      width: 64px;
+      height: 78px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      transition: left 0.24s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.25s ease;
+      z-index: 10;
+    }
+    .char-shadow {
+      position: absolute;
+      bottom: 14px;
+      width: 38px;
+      height: 10px;
+      background: rgba(15, 23, 42, 0.35);
+      border-radius: 50%;
+      transition: transform 0.24s ease, opacity 0.24s ease;
+      z-index: -1;
+    }
+    .char-box.vaulting .char-shadow {
+      transform: scale(0.6);
+      opacity: 0.18;
+    }
+    .char-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.35);
+      border: 2.5px solid #ffffff;
+      background: #fef3c7;
+      transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .char-box.vaulting .char-avatar {
+      transform: translateY(-20px) scale(1.24) rotate(8deg);
+      box-shadow: 0 16px 22px rgba(15, 23, 42, 0.4);
+    }
+    .student-avatar {
+      border-color: #fde047;
+      animation: runBob 0.28s infinite alternate;
+    }
+    .teacher-avatar {
+      border-color: #fb7185;
+      animation: runBob 0.22s infinite alternate-reverse;
+    }
+    .track-stage.paused .student-avatar,
+    .track-stage.paused .teacher-avatar { animation-play-state: paused; }
+    @keyframes runBob {
+      from { transform: translateY(0px) rotate(-4deg); }
+      to { transform: translateY(-4px) rotate(4deg); }
+    }
+    .char-tag {
+      margin-top: 3px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #fff;
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 1px 7px;
+      border-radius: 999px;
+      white-space: nowrap;
+      max-width: 84px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ANIMASI LUCU SAAT TERTANGKAP & SELEBRASI */
+    .fx-comic-pop {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: 900;
+      z-index: 25;
+      pointer-events: none;
+      animation: comicBounce 0.45s ease infinite alternate;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+    }
+    @keyframes comicBounce {
+      from { transform: translateY(0px) scale(0.95) rotate(-6deg); }
+      to { transform: translateY(-8px) scale(1.15) rotate(6deg); }
+    }
+    .student-dizzy {
+      animation: dizzySpin 0.28s linear infinite !important;
+      transform: rotate(-72deg) scale(0.92) !important;
+    }
+    @keyframes dizzySpin {
+      0% { transform: rotate(-68deg) translateX(-3px); }
+      50% { transform: rotate(-76deg) translateX(3px); }
+      100% { transform: rotate(-68deg) translateX(-3px); }
+    }
+    .teacher-gloating {
+      animation: gloatJump 0.24s ease infinite alternate !important;
+    }
+    @keyframes gloatJump {
+      from { transform: translateY(0px) scale(1.05) rotate(-5deg); }
+      to { transform: translateY(-12px) scale(1.14) rotate(6deg); }
+    }
+    .student-celebrate {
+      animation: celebrateHop 0.3s ease infinite alternate !important;
+    }
+    @keyframes celebrateHop {
+      from { transform: translateY(0px) scale(1.1) rotate(-8deg); }
+      to { transform: translateY(-16px) scale(1.22) rotate(8deg); }
+    }
+
+    /* ON-SCREEN CONTROLS */
+    .controls-bar {
+      background: #0f172a;
+      padding: 10px 12px 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      z-index: 20;
+    }
+    .btn-lane {
+      background: #1e293b;
+      color: #fff;
+      border: 1.5px solid #475569;
+      border-radius: 12px;
+      padding: 11px 8px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-lane.active-btn {
+      background: #2563eb;
+      border-color: #fde047;
+      color: #fef08a;
+    }
+    .btn-lane:active { background: #2563eb; border-color: #60a5fa; transform: scale(0.97); }
+
+    /* QUESTION MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      text-align: center;
+    }
+    .modal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .topic-tag {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .q-timer-pill {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1.5px solid #f59e0b;
+      font-size: 0.78rem;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .q-timer-pill.danger {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #ef4444;
+    }
+    .math-q {
+      font-size: 1.45rem;
+      font-weight: 900;
+      margin: 8px 0 14px;
+      color: #0f172a;
+    }
+    .ans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-ans {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-ans:hover { background: #eff6ff; border-color: #2563eb; }
+
+    /* OVERLAY SCREENS */
+    .overlay-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(165deg, #1e1b4b 0%, #1d4ed8 60%, #0284c7 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 18px 16px;
+      z-index: 60;
+      overflow-y: auto;
+    }
+    .overlay-screen.win-screen {
+      background: linear-gradient(165deg, #064e3b 0%, #047857 55%, #d97706 100%);
+    }
+    .overlay-screen.hidden { display: none; }
+
+    /* TOMBOL MUSIK DI HALAMAN LOGIN & PETUNJUK */
+    .overlay-audio-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(15, 23, 42, 0.55);
+      color: #fef08a;
+      border: 1.5px solid rgba(255, 255, 255, 0.32);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      cursor: pointer;
+      z-index: 70;
+    }
+
+    .hero-duo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      padding: 10px 16px;
+      border-radius: 22px;
+      margin-bottom: 8px;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+    }
+    .hero-duo img {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2.5px solid #fde047;
+      background: #fef3c7;
+    }
+
+    /* HALAMAN PETUNJUK: BU RINA BESAR TANPA FIGURA & MULUT BERGERAK DI BIBIR */
+    .guide-badge-title {
+      display: inline-block;
+      background: #fbbf24;
+      color: #451a03;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+    }
+    .teacher-talk-hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 2px 0 8px;
+    }
+    .teacher-cutout-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      animation: teacherGestureBob 0.62s ease-in-out infinite alternate;
+    }
+    @keyframes teacherGestureBob {
+      0% { transform: translateY(0px) rotate(-1.5deg) scale(1); }
+      50% { transform: translateY(-5px) rotate(1.5deg) scale(1.02); }
+      100% { transform: translateY(-2px) rotate(-1deg) scale(1.01); }
+    }
+    .teacher-big-frameless {
+      width: 176px;
+      height: 204px;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.45));
+      display: block;
+    }
+    /* Posisi mulut tepat di bibir wajah Bu Rina (geser ke kanan atas) */
+    .animated-mouth {
+      position: absolute;
+      top: 30.9%;
+      left: 60.2%;
+      width: 9px;
+      height: 5px;
+      margin-left: -4.5px;
+      background: #881337;
+      border: 1.2px solid #4c0519;
+      border-radius: 2px 2px 6px 6px;
+      box-shadow: inset 0 -1.5px 0 #fda4af;
+      transform-origin: center top;
+      animation: mouthSpeakAnim 0.24s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes mouthSpeakAnim {
+      0% { transform: scaleY(0.2) scaleX(0.95); }
+      45% { transform: scaleY(1.05) scaleX(1.08); }
+      75% { transform: scaleY(0.5) scaleX(0.92); }
+      100% { transform: scaleY(1.15) scaleX(1.05); }
+    }
+    .speech-bubble-box {
+      margin-top: 4px;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 14px;
+      padding: 8px 12px;
+      max-width: 390px;
+      width: 100%;
+      font-size: 0.82rem;
+      font-weight: 800;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .identity-form {
+      width: 100%;
+      max-width: 390px;
+      background: rgba(15, 23, 42, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 16px;
+      padding: 12px;
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      text-align: left;
+    }
+    .identity-form label {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: #fde68a;
+      margin-bottom: -2px;
+    }
+    .identity-form select,
+    .identity-form input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .identity-form input::placeholder {
+      color: #64748b;
+      font-weight: 600;
+    }
+    .field-note {
+      font-size: 0.7rem;
+      color: #e2e8f0;
+      margin-top: -2px;
+    }
+    .form-err {
+      display: none;
+      background: #fee2e2;
+      color: #991b1b;
+      font-size: 0.76rem;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .overlay-card {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 16px;
+      padding: 11px 14px;
+      margin: 4px 0 12px;
+      width: 100%;
+      max-width: 390px;
+      font-size: 0.79rem;
+      line-height: 1.45;
+      text-align: left;
+    }
+    .sync-pill {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.16);
+      color: #fef08a;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #451a03;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 20px;
+      font-size: 0.96rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      width: 100%;
+      max-width: 390px;
+    }
+    .btn-secondary {
+      margin-top: 8px;
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      max-width: 390px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="game-shell">
+    <div class="top-hud">
+      <div class="hud-group">
+        <span class="badge badge-level">LVL 1</span>
+        <span class="badge badge-score" id="scoreHud">⭐ 0</span>
+        <span class="badge badge-dist" id="distHud">🏃 0 / 1500 m</span>
+      </div>
+      <div class="hud-group">
+        <button class="btn-mini" onclick="keHalamanIdentitas()" title="Ganti Nama/Kelas">👤</button>
+        <button class="btn-mini" id="soundBtn" onclick="toggleSound()">🔊</button>
+        <button class="btn-mini" onclick="startGame()">↻</button>
+      </div>
+    </div>
+
+    <div class="player-strip">
+      <span id="hudPlayerName">Murid SMKN 4</span>
+      <span id="hudPlayerClass">Kelas X</span>
+    </div>
+
+    <div class="chase-bar-wrap">
+      <div class="chase-labels">
+        <span>Bu Rina Mengejar!</span>
+        <span id="chaseStatusText">Jarak Aman</span>
+      </div>
+      <div class="chase-track">
+        <div class="chase-fill" id="chaseFill"></div>
+      </div>
+    </div>
+
+    <div class="track-stage paused" id="trackStage">
+      <div class="lanes-grid">
+        <div class="lane" id="lane-0" onclick="moveToLane(0)"><span class="lane-label">JALUR 1</span></div>
+        <div class="lane active-lane" id="lane-1" onclick="moveToLane(1)"><span class="lane-label">JALUR 2</span></div>
+        <div class="lane" id="lane-2" onclick="moveToLane(2)"><span class="lane-label">JALUR 3</span></div>
+      </div>
+
+      <!-- Karakter Guru (Bu Rina) di belakang -->
+      <div class="char-box" id="teacherBox" style="bottom: 24px;">
+        <div class="char-shadow"></div>
+        <img src="bu-rina.png" alt="Bu Rina" class="char-avatar teacher-avatar" id="teacherImg" />
+        <span class="char-tag">Bu Rina</span>
+      </div>
+
+      <!-- Karakter Murid di depan -->
+      <div class="char-box" id="studentBox" style="bottom: 124px;">
+        <div class="char-shadow"></div>
+        <img src="murid.png" alt="Murid" class="char-avatar student-avatar" id="studentImg" />
+        <span class="char-tag" id="studentAvatarTag">Murid</span>
+      </div>
+    </div>
+
+    <div class="controls-bar">
+      <button class="btn-lane" id="ctrl-0" onclick="moveToLane(0)">🦘 Jalur 1</button>
+      <button class="btn-lane active-btn" id="ctrl-1" onclick="moveToLane(1)">🦘 Jalur 2</button>
+      <button class="btn-lane" id="ctrl-2" onclick="moveToLane(2)">🦘 Jalur 3</button>
+    </div>
+  </div>
+
+  <!-- MODAL SOAL PERHITUNGAN DASAR (10 DETIK) -->
+  <div class="modal-backdrop" id="questionModal">
+    <div class="modal-card">
+      <div class="modal-top">
+        <span class="topic-tag" id="qTopic">Perhitungan Dasar</span>
+        <span class="q-timer-pill" id="qTimerBadge">⏱️ 10s</span>
+      </div>
+      <div style="font-size:0.8rem; font-weight:700; color:#64748b;">Waktu 10 detik! Jawab cepat biar Bu Rina makin jauh:</div>
+      <div class="math-q" id="qText">2 + 3 = ?</div>
+      <div class="ans-grid" id="ansGrid"></div>
+    </div>
+  </div>
+
+  <!-- HALAMAN 1: PILIH KELAS & KETIK NAMA LENGKAP -->
+  <div class="overlay-screen" id="startScreen">
+    <button class="overlay-audio-btn" id="loginSoundBtn" onclick="toggleSound()">🔊 Musik ON</button>
+
+    <div class="hero-duo">
+      <img src="murid.png" alt="Murid" />
+      <span style="font-size:1.4rem; font-weight:900;">💨</span>
+      <img src="bu-rina.png" alt="Bu Rina" />
+    </div>
+    <h1 style="margin:0 0 4px; font-size:1.42rem; font-weight:900;">Kabur dari Bu Rina!</h1>
+    <p style="margin:0; font-size:0.82rem; opacity:0.92;">Level 1 (Target 1.500 m) • SMKN 4 Tangerang</p>
+
+    <div class="identity-form">
+      <label for="selectKelas">1. Pilih Kelas (Wajib)</label>
+      <select id="selectKelas">
+        <option value="">-- Pilih Kelas --</option>
+        <option value="X TMI">X TMI</option>
+        <option value="X Mesin 1">X Mesin 1</option>
+        <option value="X Mesin 2">X Mesin 2</option>
+        <option value="X DGM">X DGM</option>
+      </select>
+
+      <label for="inputNamaLengkap">2. Tulis Nama Lengkap (Wajib)</label>
+      <input
+        type="text"
+        id="inputNamaLengkap"
+        placeholder="Tulis nama lengkap"
+        autocomplete="name"
+        maxlength="60"
+      />
+      <div class="field-note">Keterangan: Tulis nama lengkap sesuai absen sekolah (bukan nama panggilan/singkatan).</div>
+
+      <div class="form-err" id="formErr">⚠️ Pilih Kelas dan tulis nama lengkap terlebih dahulu ya!</div>
+    </div>
+
+    <button class="btn-primary" onclick="validasiDanKePetunjuk()">➡️ Lanjut ke Petunjuk</button>
+  </div>
+
+  <!-- HALAMAN 2: PETUNJUK (BU RINA BESAR TANPA FIGURA & MULUT BERGERAK) -->
+  <div class="overlay-screen hidden" id="guideScreen">
+    <button class="overlay-audio-btn" id="guideSoundBtn" onclick="toggleSound()">🔊 Musik ON</button>
+
+    <span class="guide-badge-title">PETUNJUK</span>
+    <p id="guideStudentGreeting" style="margin:0 0 4px; font-size:0.84rem; font-weight:800; color:#fde68a;"></p>
+
+    <div class="teacher-talk-hero">
+      <div class="teacher-cutout-wrap">
+        <img src="bu-rina.png" alt="Bu Rina Menjelaskan Aturan" class="teacher-big-frameless" />
+        <div class="animated-mouth" aria-hidden="true"></div>
+      </div>
+      <div class="speech-bubble-box">
+        “Perhatikan aturan lari &amp; hitung cepatnya ya! Jangan sampai salah hitung atau nabrak rintangan!”
+      </div>
+    </div>
+
+    <div class="overlay-card">
+      <strong>Aturan Main Level 1 (1.500 m):</strong><br/>
+      1. Pindah ke <strong>Jalur 1 / 2 / 3</strong> untuk meloncati meja-kursi, ambil bintang ⭐ (+15 skor), dan hindari rintangan 🚧.<br/>
+      2. Tiap <strong>Gerbang Soal</strong> waktunya <strong>10 detik</strong>. Benar menjauhkan Bu Rina (+50 skor); salah atau lewat 10 detik bikin Bu Rina makin dekat.<br/>
+      3. Capai <strong>1.500 m</strong> untuk menamatkan <strong>Level 1</strong>!
+    </div>
+
+    <button class="btn-primary" onclick="startGame()">🚀 Mulai Level 1 Sekarang!</button>
+    <button class="btn-secondary" onclick="keHalamanIdentitas()">⬅️ Kembali Edit Nama / Kelas</button>
+  </div>
+
+  <!-- LAYAR GAME OVER -->
+  <div class="overlay-screen hidden" id="gameOverScreen">
+    <div class="hero-duo">
+      <img src="bu-rina.png" alt="Bu Rina" />
+      <span style="font-size:1.4rem; font-weight:900;">💥💫</span>
+      <img src="murid.png" alt="Murid" />
+    </div>
+    <h2 style="margin:0 0 4px; font-size:1.55rem; font-weight:900; color:#fde047;">TERTANGKAP BU RINA!</h2>
+    <p id="koStudentInfo" style="margin:0 0 6px; font-size:0.84rem; font-weight:800; color:#fde68a;"></p>
+    <p id="gameOverReason" style="margin:0 0 10px; font-size:0.86rem; font-weight:700;"></p>
+    <div class="overlay-card" style="text-align:center;">
+      <div>Skor Akhir: <strong id="finalScoreText">0</strong></div>
+      <div>Jarak Tempuh: <strong id="finalDistText">0 m</strong> / 1.500 m</div>
+      <div class="sync-pill" id="koSyncText"></div>
+    </div>
+    <button class="btn-primary" onclick="startGame()">↻ Coba Lagi Level 1!</button>
+    <button class="btn-secondary" onclick="keHalamanIdentitas()">👤 Ganti Nama / Kelas</button>
+  </div>
+
+  <!-- LAYAR SELEBRASI TAMAT LEVEL 1 -->
+  <div class="overlay-screen win-screen hidden" id="winLevel1Screen">
+    <div class="hero-duo">
+      <img src="murid.png" alt="Murid" />
+      <span style="font-size:1.7rem; font-weight:900;">🏆🎉</span>
+      <img src="bu-rina.png" alt="Bu Rina" />
+    </div>
+    <h2 style="margin:0 0 4px; font-size:1.6rem; font-weight:900; color:#fde047;">TAMAT LEVEL 1!</h2>
+    <p id="winStudentInfo" style="margin:0 0 6px; font-size:0.86rem; font-weight:800; color:#fef08a;"></p>
+    <p style="margin:0 0 10px; font-size:0.88rem; font-weight:700;">
+      Hebat! Kamu berhasil menempuh 1.500 m tanpa tertangkap Bu Rina!
+    </p>
+    <div class="overlay-card" style="text-align:center;">
+      <div>Total Skor: <strong id="winScoreText">0</strong></div>
+      <div>Jarak Tercapai: <strong>1.500 m (Tamat Level 1)</strong></div>
+      <div class="sync-pill" id="winSyncText"></div>
+    </div>
+    <button class="btn-primary" onclick="startGame()">🎉 Main Lagi Level 1</button>
+    <button class="btn-secondary" onclick="keHalamanIdentitas()">👤 Ganti Nama / Kelas</button>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZXXrxd7cQTupYNo4area59OppIXeOekDjjiqwRmTyzX9w4r8J2BQTPtEnI7vMA0L79g/exec";
+
+    // Jarak jeda antar Gerbang Soal (diperpanjang agar tidak terlalu rapat)
+    const FIRST_GATE_METERS = 110;
+    const GATE_INTERVAL_METERS = 140;
+
+    let selectedKelas = "";
+    let selectedNama = "";
+
+    function rapikanNama(raw) {
+      return raw
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase()
+        .replace(/\b\w/g, ch => ch.toUpperCase());
+    }
+
+    // Jika lebih dari 1 kata, ambil satu kata dengan panjang huruf paling singkat
+    function ambilNamaPalingSingkat(namaRapih) {
+      const kataList = namaRapih.split(" ").filter(Boolean);
+      if (kataList.length === 0) return "Siswa";
+      if (kataList.length === 1) return kataList[0];
+
+      return kataList.reduce((terpendek, kandidat) =>
+        kandidat.length < terpendek.length ? kandidat : terpendek
+      );
+    }
+
+    function validasiDanKePetunjuk() {
+      const kelas = document.getElementById("selectKelas").value.trim();
+      const namaMentah = document.getElementById("inputNamaLengkap").value;
+      const nama = rapikanNama(namaMentah);
+      const errEl = document.getElementById("formErr");
+
+      if (!kelas || !nama) {
+        errEl.style.display = "block";
+        beep(200, 0.18, "sawtooth");
+        return;
+      }
+
+      errEl.style.display = "none";
+      selectedKelas = kelas;
+      selectedNama = nama;
+      document.getElementById("inputNamaLengkap").value = selectedNama;
+
+      document.getElementById("hudPlayerName").textContent = `👤 ${selectedNama}`;
+      document.getElementById("hudPlayerClass").textContent = selectedKelas;
+      document.getElementById("studentAvatarTag").textContent = ambilNamaPalingSingkat(selectedNama);
+      document.getElementById("guideStudentGreeting").textContent = `${selectedNama} • ${selectedKelas}`;
+
+      document.getElementById("startScreen").classList.add("hidden");
+      document.getElementById("guideScreen").classList.remove("hidden");
+      startLobbyBgmLoop();
+      beep(587, 0.1, "triangle");
+    }
+
+    function keHalamanIdentitas() {
+      stopGameIntervals();
+      clearTimeout(sequenceTimer);
+      clearFxPopups();
+      document.getElementById("guideScreen").classList.add("hidden");
+      document.getElementById("gameOverScreen").classList.add("hidden");
+      document.getElementById("winLevel1Screen").classList.add("hidden");
+      document.getElementById("questionModal").style.display = "none";
+      document.getElementById("startScreen").classList.remove("hidden");
+      startLobbyBgmLoop();
+    }
+
+    async function kirimRekapOpsional(statusText, targetElId) {
+      const el = document.getElementById(targetElId);
+      if (!GOOGLE_SCRIPT_URL) {
+        el.style.display = "none";
+        return;
+      }
+      el.style.display = "block";
+      el.textContent = "⏳ Mengirim hasil ke rekapan guru...";
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            nama: selectedNama,
+            kelas: selectedKelas,
+            status: statusText,
+            benar: Math.floor(distance),
+            total: TARGET_DISTANCE_LV1,
+            nilai: Math.min(100, Math.round((distance / TARGET_DISTANCE_LV1) * 100)),
+            xp: score
+          })
+        });
+        el.textContent = "✅ Hasil sudah dikirim ke Google Sheets!";
+      } catch (e) {
+        el.textContent = "⚠️ Gagal mengirim hasil, cek koneksi internet.";
+      }
+    }
+
+    const LANE_CENTERS = ["16.66%", "50%", "83.33%"];
+    const DESK_DIVIDER_X = ["33.33%", "66.66%"];
+    const QUESTION_TIME_LIMIT = 10;
+    const TARGET_DISTANCE_LV1 = 1500;
+
+    let currentLane = 1;
+    let score = 0;
+    let distance = 0;
+    let safetyDistance = 68;
+    let isRunning = false;
+    let isEndingSequence = false;
+    let isQuestionOpen = false;
+    let soundOn = true;
+    let audioCtx = null;
+
+    /* ================= MUSIK ANIMASI HALAMAN LOGIN & PETUNJUK ================= */
+    let lobbyBgmTimer = null;
+    let lobbyStep = 0;
+    const lobbyMelody = [
+      523.25, 659.25, 783.99, 659.25,
+      587.33, 698.46, 880.00, 698.46,
+      523.25, 659.25, 783.99, 1046.50,
+      783.99, 659.25, 587.33, 0
+    ];
+    const lobbyBass = [
+      261.63, 0, 196.00, 0,
+      293.66, 0, 220.00, 0,
+      261.63, 0, 196.00, 0,
+      196.00, 246.94, 261.63, 0
+    ];
+
+    function isLobbyOrGuideVisible() {
+      const startVisible = !document.getElementById("startScreen").classList.contains("hidden");
+      const guideVisible = !document.getElementById("guideScreen").classList.contains("hidden");
+      return startVisible || guideVisible;
+    }
+
+    function playLobbyBgmTick() {
+      if (!soundOn || isRunning || !isLobbyOrGuideVisible()) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") return;
+
+        const now = audioCtx.currentTime;
+        const idx = lobbyStep % lobbyMelody.length;
+
+        const melFreq = lobbyMelody[idx];
+        if (melFreq > 0) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(melFreq, now);
+          gain.gain.setValueAtTime(0.032, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+
+        const bassFreq = lobbyBass[idx];
+        if (bassFreq > 0) {
+          const bOsc = audioCtx.createOscillator();
+          const bGain = audioCtx.createGain();
+          bOsc.type = "triangle";
+          bOsc.frequency.setValueAtTime(bassFreq, now);
+          bGain.gain.setValueAtTime(0.026, now);
+          bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+          bOsc.connect(bGain);
+          bGain.connect(audioCtx.destination);
+          bOsc.start(now);
+          bOsc.stop(now + 0.27);
+        }
+
+        lobbyStep++;
+      } catch (e) {}
+    }
+
+    function startLobbyBgmLoop() {
+      stopLobbyBgmLoop();
+      if (!soundOn || isRunning || !isLobbyOrGuideVisible()) return;
+      lobbyBgmTimer = setInterval(playLobbyBgmTick, 300);
+    }
+
+    function stopLobbyBgmLoop() {
+      clearInterval(lobbyBgmTimer);
+      lobbyBgmTimer = null;
+    }
+
+    function unlockAudioOnFirstGesture() {
+      if (!soundOn) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume().then(() => {
+            if (!isRunning && isLobbyOrGuideVisible() && !lobbyBgmTimer) {
+              startLobbyBgmLoop();
+            }
+          });
+        } else if (!isRunning && isLobbyOrGuideVisible() && !lobbyBgmTimer) {
+          startLobbyBgmLoop();
+        }
+      } catch (e) {}
+    }
+
+    document.addEventListener("pointerdown", unlockAudioOnFirstGesture, { passive: true });
+    document.addEventListener("keydown", unlockAudioOnFirstGesture, { passive: true });
+
+    /* ================= MUSIK LATAR KEJAR-KEJARAN (LEMBUT & SERU) ================= */
+    let bgmTimer = null;
+    let bgmStep = 0;
+
+    const bgmBassNotes = [130.81, 130.81, 164.81, 196.00, 146.83, 146.83, 174.61, 220.00];
+    const bgmLeadNotes = [523.25, 0, 659.25, 587.33, 440.00, 523.25, 587.33, 0];
+
+    function playBgmTick() {
+      if (!soundOn || !isRunning || isQuestionOpen || isEndingSequence) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        const now = audioCtx.currentTime;
+        const idx = bgmStep % bgmBassNotes.length;
+
+        const bassFreq = bgmBassNotes[idx];
+        const bassOsc = audioCtx.createOscillator();
+        const bassGain = audioCtx.createGain();
+        bassOsc.type = "triangle";
+        bassOsc.frequency.setValueAtTime(bassFreq, now);
+        bassGain.gain.setValueAtTime(0.045, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+        bassOsc.connect(bassGain);
+        bassGain.connect(audioCtx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.2);
+
+        const leadFreq = bgmLeadNotes[idx];
+        if (leadFreq > 0) {
+          const leadOsc = audioCtx.createOscillator();
+          const leadGain = audioCtx.createGain();
+          leadOsc.type = "sine";
+          leadOsc.frequency.setValueAtTime(leadFreq, now);
+          leadGain.gain.setValueAtTime(0.028, now);
+          leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          leadOsc.connect(leadGain);
+          leadGain.connect(audioCtx.destination);
+          leadOsc.start(now);
+          leadOsc.stop(now + 0.16);
+        }
+
+        bgmStep++;
+      } catch (e) {}
+    }
+
+    function startBgmLoop() {
+      stopBgmLoop();
+      if (!soundOn || !isRunning || isQuestionOpen || isEndingSequence) return;
+      bgmTimer = setInterval(playBgmTick, 240);
+    }
+
+    function stopBgmLoop() {
+      clearInterval(bgmTimer);
+      bgmTimer = null;
+    }
+
+    let spawnTimer = null;
+    let deskTimer = null;
+    let loopTimer = null;
+    let vaultTimer = null;
+    let sequenceTimer = null;
+    let questionCountdown = null;
+    let qTimeLeft = QUESTION_TIME_LIMIT;
+
+    let nextGateMeters = FIRST_GATE_METERS;
+    let entities = [];
+    let deskRows = [];
+    let touchStartX = null;
+    let questionQueue = [];
+
+    function beep(freq, dur = 0.1, type = "sine") {
+      if (!soundOn) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function playVaultSound() {
+      if (!soundOn) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(340, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(680, audioCtx.currentTime + 0.14);
+        gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {}
+    }
+
+    function playFunnyCaughtSound() {
+      [420, 310, 220, 140].forEach((f, idx) => {
+        setTimeout(() => beep(f, 0.12, "sawtooth"), idx * 95);
+      });
+    }
+
+    function playWinFanfare() {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+        setTimeout(() => beep(f, 0.16, "triangle"), idx * 110);
+      });
+    }
+
+    function launchConfetti() {
+      const canvas = document.getElementById("confettiCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const colors = ["#fbbf24", "#22c55e", "#38bdf8", "#f43f5e", "#a855f7"];
+      const pieces = Array.from({ length: 85 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 140,
+        vx: (Math.random() - 0.5) * 6,
+        vy: Math.random() * 4 + 2.5,
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * 360
+      }));
+
+      let frame = 0;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += 6;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+        });
+        frame++;
+        if (frame < 120) requestAnimationFrame(draw);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      draw();
+    }
+
+    function syncSoundButtonsUI() {
+      document.getElementById("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+      const label = soundOn ? "🔊 Musik ON" : "🔇 Musik OFF";
+      document.getElementById("loginSoundBtn").textContent = label;
+      document.getElementById("guideSoundBtn").textContent = label;
+    }
+
+    function toggleSound() {
+      soundOn = !soundOn;
+      syncSoundButtonsUI();
+      if (soundOn) {
+        if (isRunning) {
+          startBgmLoop();
+        } else if (isLobbyOrGuideVisible()) {
+          startLobbyBgmLoop();
+        }
+        beep(659, 0.08, "triangle");
+      } else {
+        stopBgmLoop();
+        stopLobbyBgmLoop();
+      }
+    }
+
+    function syncActiveLaneUI() {
+      for (let i = 0; i < 3; i++) {
+        const laneEl = document.getElementById(`lane-${i}`);
+        const ctrlEl = document.getElementById(`ctrl-${i}`);
+        if (laneEl) laneEl.classList.toggle("active-lane", i === currentLane);
+        if (ctrlEl) ctrlEl.classList.toggle("active-btn", i === currentLane);
+      }
+    }
+
+    function triggerVaultAnimation() {
+      const studentBox = document.getElementById("studentBox");
+      studentBox.classList.remove("vaulting");
+      void studentBox.offsetWidth;
+      studentBox.classList.add("vaulting");
+      playVaultSound();
+      clearTimeout(vaultTimer);
+      vaultTimer = setTimeout(() => {
+        studentBox.classList.remove("vaulting");
+      }, 250);
+    }
+
+    function moveToLane(laneIdx) {
+      if (!isRunning || isQuestionOpen || isEndingSequence) return;
+      const targetLane = Math.max(0, Math.min(2, laneIdx));
+      if (targetLane !== currentLane) {
+        currentLane = targetLane;
+        document.getElementById("studentBox").style.left = LANE_CENTERS[currentLane];
+        syncActiveLaneUI();
+        triggerVaultAnimation();
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") moveToLane(currentLane - 1);
+      if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") moveToLane(currentLane + 1);
+      if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") moveToLane(1);
+    });
+
+    const stageEl = document.getElementById("trackStage");
+    stageEl.addEventListener("touchstart", (e) => {
+      if (e.touches.length > 0) touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    stageEl.addEventListener("touchend", (e) => {
+      if (touchStartX === null || e.changedTouches.length === 0) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 28) {
+        moveToLane(dx > 0 ? currentLane + 1 : currentLane - 1);
+      }
+      touchStartX = null;
+    }, { passive: true });
+
+    /* ================= 50 SOAL PERHITUNGAN DASAR SEDERHANA ================= */
+    const soalBank = [
+      { topic: "Penjumlahan", q: "14 + 9 = ?", ans: "23", opts: ["23", "21", "25", "13"] },
+      { topic: "Penjumlahan", q: "27 + 16 = ?", ans: "43", opts: ["43", "33", "41", "53"] },
+      { topic: "Penjumlahan", q: "35 + 28 = ?", ans: "63", opts: ["63", "53", "61", "73"] },
+      { topic: "Penjumlahan", q: "-12 + 20 = ?", ans: "8", opts: ["8", "-8", "32", "-32"] },
+      { topic: "Penjumlahan", q: "-18 + 11 = ?", ans: "-7", opts: ["-7", "7", "-29", "29"] },
+      { topic: "Penjumlahan", q: "46 + 19 = ?", ans: "65", opts: ["65", "55", "63", "75"] },
+      { topic: "Penjumlahan", q: "-9 + (-14) = ?", ans: "-23", opts: ["-23", "23", "-5", "5"] },
+      { topic: "Penjumlahan", q: "52 + 24 = ?", ans: "76", opts: ["76", "66", "74", "86"] },
+      { topic: "Penjumlahan", q: "19 + 37 = ?", ans: "56", opts: ["56", "46", "54", "66"] },
+
+      { topic: "Pengurangan", q: "45 - 18 = ?", ans: "27", opts: ["27", "37", "25", "17"] },
+      { topic: "Pengurangan", q: "62 - 27 = ?", ans: "35", opts: ["35", "45", "33", "25"] },
+      { topic: "Pengurangan", q: "80 - 34 = ?", ans: "46", opts: ["46", "56", "44", "36"] },
+      { topic: "Pengurangan", q: "16 - 25 = ?", ans: "-9", opts: ["-9", "9", "-11", "11"] },
+      { topic: "Pengurangan", q: "-10 - 15 = ?", ans: "-25", opts: ["-25", "25", "-5", "5"] },
+      { topic: "Pengurangan", q: "73 - 29 = ?", ans: "44", opts: ["44", "54", "42", "34"] },
+      { topic: "Pengurangan", q: "91 - 46 = ?", ans: "45", opts: ["45", "55", "43", "35"] },
+      { topic: "Pengurangan", q: "12 - 19 = ?", ans: "-7", opts: ["-7", "7", "-9", "9"] },
+      { topic: "Pengurangan", q: "54 - 17 = ?", ans: "37", opts: ["37", "47", "35", "27"] },
+
+      { topic: "Perkalian", q: "7 × 8 = ?", ans: "56", opts: ["56", "54", "64", "48"] },
+      { topic: "Perkalian", q: "9 × 6 = ?", ans: "54", opts: ["54", "45", "63", "48"] },
+      { topic: "Perkalian", q: "12 × 5 = ?", ans: "60", opts: ["60", "50", "65", "55"] },
+      { topic: "Perkalian", q: "14 × 3 = ?", ans: "42", opts: ["42", "32", "46", "38"] },
+      { topic: "Perkalian", q: "8 × 9 = ?", ans: "72", opts: ["72", "64", "81", "68"] },
+      { topic: "Perkalian", q: "15 × 4 = ?", ans: "60", opts: ["60", "45", "55", "65"] },
+      { topic: "Perkalian", q: "-6 × 7 = ?", ans: "-42", opts: ["-42", "42", "-36", "36"] },
+      { topic: "Perkalian", q: "11 × 8 = ?", ans: "88", opts: ["88", "78", "98", "84"] },
+      { topic: "Perkalian", q: "13 × 4 = ?", ans: "52", opts: ["52", "42", "56", "48"] },
+
+      { topic: "Pembagian", q: "72 : 8 = ?", ans: "9", opts: ["9", "8", "7", "6"] },
+      { topic: "Pembagian", q: "84 : 7 = ?", ans: "12", opts: ["12", "14", "11", "13"] },
+      { topic: "Pembagian", q: "96 : 6 = ?", ans: "16", opts: ["16", "14", "18", "12"] },
+      { topic: "Pembagian", q: "65 : 5 = ?", ans: "13", opts: ["13", "12", "15", "14"] },
+      { topic: "Pembagian", q: "108 : 9 = ?", ans: "12", opts: ["12", "11", "13", "14"] },
+      { topic: "Pembagian", q: "-56 : 8 = ?", ans: "-7", opts: ["-7", "7", "-8", "8"] },
+      { topic: "Pembagian", q: "90 : 15 = ?", ans: "6", opts: ["6", "5", "7", "8"] },
+      { topic: "Pembagian", q: "78 : 6 = ?", ans: "13", opts: ["13", "12", "14", "15"] },
+
+      { topic: "Pecahan", q: "1/4 + 2/4 = ?", ans: "3/4", opts: ["3/4", "3/8", "1/2", "2/4"] },
+      { topic: "Pecahan", q: "5/6 - 2/6 = ?", ans: "1/2", opts: ["1/2", "3/0", "7/6", "1/3"] },
+      { topic: "Pecahan", q: "1/2 dari 24 = ?", ans: "12", opts: ["12", "8", "6", "48"] },
+      { topic: "Pecahan", q: "3/4 dari 20 = ?", ans: "15", opts: ["15", "12", "10", "5"] },
+      { topic: "Pecahan", q: "2/5 + 1/5 = ?", ans: "3/5", opts: ["3/5", "3/10", "2/5", "4/5"] },
+      { topic: "Pecahan", q: "7/8 - 3/8 = ?", ans: "1/2", opts: ["1/2", "4/0", "10/8", "1/4"] },
+      { topic: "Pecahan", q: "1/3 dari 27 = ?", ans: "9", opts: ["9", "6", "12", "81"] },
+
+      { topic: "Pangkat", q: "2³ = ?", ans: "8", opts: ["8", "6", "9", "16"] },
+      { topic: "Pangkat", q: "2⁴ = ?", ans: "16", opts: ["16", "8", "12", "32"] },
+      { topic: "Pangkat", q: "3² = ?", ans: "9", opts: ["9", "6", "8", "12"] },
+      { topic: "Pangkat", q: "3³ = ?", ans: "27", opts: ["27", "9", "18", "81"] },
+      { topic: "Pangkat", q: "4² = ?", ans: "16", opts: ["16", "8", "12", "64"] },
+      { topic: "Pangkat", q: "5² = ?", ans: "25", opts: ["25", "10", "15", "20"] },
+      { topic: "Pangkat", q: "2⁵ = ?", ans: "32", opts: ["32", "10", "25", "64"] },
+      { topic: "Pangkat", q: "2² + 3² = ?", ans: "13", opts: ["13", "10", "12", "25"] }
+    ];
+
+    function refillQuestionQueue() {
+      questionQueue = [...soalBank];
+      for (let i = questionQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questionQueue[i], questionQueue[j]] = [questionQueue[j], questionQueue[i]];
+      }
+    }
+
+    function getNextQuestion() {
+      if (questionQueue.length === 0) refillQuestionQueue();
+      return questionQueue.pop();
+    }
+
+    function updateQuestionTimerBadge() {
+      const badge = document.getElementById("qTimerBadge");
+      badge.textContent = `⏱️ ${qTimeLeft}s`;
+      badge.classList.toggle("danger", qTimeLeft <= 3);
+    }
+
+    function openQuestionModal() {
+      isQuestionOpen = true;
+      stopBgmLoop();
+      stageEl.classList.add("paused");
+      const item = getNextQuestion();
+      document.getElementById("qTopic").textContent = item.topic;
+      document.getElementById("qText").textContent = item.q;
+
+      const shuffled = [...item.opts].sort(() => Math.random() - 0.5);
+      const grid = document.getElementById("ansGrid");
+      grid.innerHTML = "";
+      shuffled.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "btn-ans";
+        btn.textContent = opt;
+        btn.onclick = () => resolveQuestion(opt === item.ans, false);
+        grid.appendChild(btn);
+      });
+
+      qTimeLeft = QUESTION_TIME_LIMIT;
+      updateQuestionTimerBadge();
+      document.getElementById("questionModal").style.display = "flex";
+
+      clearInterval(questionCountdown);
+      questionCountdown = setInterval(() => {
+        if (!isRunning || !isQuestionOpen) {
+          clearInterval(questionCountdown);
+          return;
+        }
+        qTimeLeft -= 1;
+        updateQuestionTimerBadge();
+        if (qTimeLeft <= 0) {
+          clearInterval(questionCountdown);
+          resolveQuestion(false, true);
+        }
+      }, 1000);
+    }
+
+    function resolveQuestion(isCorrect, isTimeout = false) {
+      clearInterval(questionCountdown);
+      document.getElementById("questionModal").style.display = "none";
+      isQuestionOpen = false;
+      if (!isRunning || isEndingSequence) return;
+      stageEl.classList.remove("paused");
+
+      if (isCorrect) {
+        score += 50;
+        safetyDistance = Math.min(100, safetyDistance + 22);
+        beep(784, 0.14, "triangle");
+      } else {
+        safetyDistance = Math.max(0, safetyDistance - 28);
+        beep(200, 0.22, "sawtooth");
+      }
+      updateHud();
+      if (safetyDistance <= 0) {
+        const reason = isTimeout
+          ? "Waktu 10 detik habis dan Bu Rina berhasil menyusulmu!"
+          : "Bu Rina berhasil menyusulmu karena jawaban kurang tepat!";
+        startCaughtFunnySequence(reason);
+        return;
+      }
+      startBgmLoop();
+    }
+
+    function spawnDeskDividers() {
+      if (!isRunning || isQuestionOpen || isEndingSequence) return;
+      DESK_DIVIDER_X.forEach(xPos => {
+        const el = document.createElement("div");
+        el.className = "desk-row-divider";
+        el.style.left = xPos;
+        el.style.top = "-64px";
+        el.innerHTML = `<div class="desk-top"></div><div class="chair-top"></div>`;
+        stageEl.appendChild(el);
+        deskRows.push({ el, y: -64 });
+      });
+    }
+
+    function spawnItem() {
+      if (!isRunning || isQuestionOpen || isEndingSequence) return;
+      const lane = Math.floor(Math.random() * 3);
+      const isObstacle = Math.random() < 0.52;
+      const el = document.createElement("div");
+      el.className = "item-entity";
+      el.style.left = LANE_CENTERS[lane];
+      el.style.top = "-48px";
+      el.textContent = isObstacle ? "🚧" : "⭐";
+      stageEl.appendChild(el);
+
+      entities.push({
+        el,
+        lane,
+        y: -48,
+        kind: isObstacle ? "obstacle" : "star",
+        hit: false
+      });
+    }
+
+    function updateCharactersVisual() {
+      const teacherBottom = 20 + ((100 - safetyDistance) / 100) * 76;
+      document.getElementById("teacherBox").style.bottom = `${teacherBottom}px`;
+      document.getElementById("teacherBox").style.left = LANE_CENTERS[currentLane];
+
+      const fill = document.getElementById("chaseFill");
+      const statusTxt = document.getElementById("chaseStatusText");
+      fill.style.width = `${safetyDistance}%`;
+
+      if (safetyDistance > 60) statusTxt.textContent = "Jarak Aman 😎";
+      else if (safetyDistance > 30) statusTxt.textContent = "Bu Rina Mendekat! 😬";
+      else statusTxt.textContent = "BAHAYA! Bu Rina di Belakang! 😱";
+    }
+
+    function updateHud() {
+      document.getElementById("scoreHud").textContent = `⭐ ${score}`;
+      document.getElementById("distHud").textContent = `🏃 ${Math.min(TARGET_DISTANCE_LV1, Math.floor(distance))} / ${TARGET_DISTANCE_LV1} m`;
+      updateCharactersVisual();
+    }
+
+    function stopGameIntervals() {
+      isRunning = false;
+      stopBgmLoop();
+      clearInterval(questionCountdown);
+      clearInterval(spawnTimer);
+      clearInterval(deskTimer);
+      clearInterval(loopTimer);
+      stageEl.classList.add("paused");
+    }
+
+    function clearFxPopups() {
+      stageEl.querySelectorAll(".fx-comic-pop").forEach(el => el.remove());
+      document.getElementById("studentImg").classList.remove("student-dizzy", "student-celebrate");
+      document.getElementById("teacherImg").classList.remove("teacher-gloating");
+    }
+
+    function startCaughtFunnySequence(reason) {
+      if (isEndingSequence) return;
+      isEndingSequence = true;
+      stopGameIntervals();
+      safetyDistance = 0;
+      updateHud();
+      playFunnyCaughtSound();
+
+      const studentImg = document.getElementById("studentImg");
+      const teacherImg = document.getElementById("teacherImg");
+      studentImg.classList.add("student-dizzy");
+      teacherImg.classList.add("teacher-gloating");
+
+      const popCloud = document.createElement("div");
+      popCloud.className = "fx-comic-pop";
+      popCloud.style.left = LANE_CENTERS[currentLane];
+      popCloud.style.bottom = "175px";
+      popCloud.style.marginLeft = "-28px";
+      popCloud.textContent = "💥💫";
+      stageEl.appendChild(popCloud);
+
+      const popBubble = document.createElement("div");
+      popBubble.className = "fx-comic-pop";
+      popBubble.style.left = LANE_CENTERS[currentLane];
+      popBubble.style.bottom = "215px";
+      popBubble.style.marginLeft = "-36px";
+      popBubble.style.fontSize = "0.85rem";
+      popBubble.style.background = "#fef08a";
+      popBubble.style.color = "#451a03";
+      popBubble.style.padding = "3px 8px";
+      popBubble.style.borderRadius = "999px";
+      popBubble.textContent = "Aduh pusing! 😵‍💫";
+      stageEl.appendChild(popBubble);
+
+      sequenceTimer = setTimeout(() => {
+        clearFxPopups();
+        document.getElementById("koStudentInfo").textContent = `${selectedNama} • ${selectedKelas}`;
+        document.getElementById("gameOverReason").textContent = reason;
+        document.getElementById("finalScoreText").textContent = score;
+        document.getElementById("finalDistText").textContent = `${Math.floor(distance)} m`;
+        document.getElementById("gameOverScreen").classList.remove("hidden");
+        kirimRekapOpsional(`GAME OVER (${Math.floor(distance)} m)`, "koSyncText");
+      }, 1350);
+    }
+
+    function startWinLevel1Sequence() {
+      if (isEndingSequence) return;
+      isEndingSequence = true;
+      distance = TARGET_DISTANCE_LV1;
+      stopGameIntervals();
+      updateHud();
+      playWinFanfare();
+      launchConfetti();
+
+      document.getElementById("studentImg").classList.add("student-celebrate");
+      const popWin = document.createElement("div");
+      popWin.className = "fx-comic-pop";
+      popWin.style.left = LANE_CENTERS[currentLane];
+      popWin.style.bottom = "185px";
+      popWin.style.marginLeft = "-26px";
+      popWin.textContent = "🏆🎉";
+      stageEl.appendChild(popWin);
+
+      sequenceTimer = setTimeout(() => {
+        clearFxPopups();
+        document.getElementById("winStudentInfo").textContent = `${selectedNama} • ${selectedKelas}`;
+        document.getElementById("winScoreText").textContent = score;
+        document.getElementById("winLevel1Screen").classList.remove("hidden");
+        kirimRekapOpsional("TAMAT LEVEL 1 (1500 m)", "winSyncText");
+      }, 1350);
+    }
+
+    function gameLoop() {
+      if (!isRunning || isQuestionOpen || isEndingSequence) return;
+
+      distance += 0.55;
+      if (distance >= TARGET_DISTANCE_LV1) {
+        startWinLevel1Sequence();
+        return;
+      }
+
+      if (Math.floor(distance) >= nextGateMeters) {
+        nextGateMeters += GATE_INTERVAL_METERS;
+        openQuestionModal();
+        return;
+      }
+
+      const speed = 5.4 + Math.min(4, distance / 250);
+
+      for (let j = deskRows.length - 1; j >= 0; j--) {
+        const dRow = deskRows[j];
+        dRow.y += speed;
+        dRow.el.style.top = `${dRow.y}px`;
+        if (dRow.y > stageEl.clientHeight + 70) {
+          dRow.el.remove();
+          deskRows.splice(j, 1);
+        }
+      }
+
+      const studentTop = stageEl.clientHeight - 124 - 64;
+      const studentBottom = stageEl.clientHeight - 124;
+
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const ent = entities[i];
+        ent.y += speed;
+        ent.el.style.top = `${ent.y}px`;
+
+        if (!ent.hit && ent.lane === currentLane && ent.y + 36 >= studentTop && ent.y <= studentBottom) {
+          ent.hit = true;
+          if (ent.kind === "star") {
+            score += 15;
+            safetyDistance = Math.min(100, safetyDistance + 5);
+            beep(880, 0.08, "sine");
+          } else {
+            safetyDistance = Math.max(0, safetyDistance - 24);
+            beep(180, 0.2, "sawtooth");
+            if (safetyDistance <= 0) {
+              ent.el.remove();
+              entities.splice(i, 1);
+              updateHud();
+              startCaughtFunnySequence("Kamu menabrak rintangan 🚧 dan tertangkap Bu Rina!");
+              return;
+            }
+          }
+          ent.el.remove();
+          entities.splice(i, 1);
+          continue;
+        }
+
+        if (ent.y > stageEl.clientHeight + 50) {
+          ent.el.remove();
+          entities.splice(i, 1);
+        }
+      }
+
+      updateHud();
+    }
+
+    function startGame() {
+      if (!selectedKelas || !selectedNama) {
+        keHalamanIdentitas();
+        return;
+      }
+
+      clearTimeout(sequenceTimer);
+      clearFxPopups();
+      stopGameIntervals();
+      stopLobbyBgmLoop();
+
+      entities.forEach(e => e.el.remove());
+      entities = [];
+      deskRows.forEach(d => d.el.remove());
+      deskRows = [];
+
+      refillQuestionQueue();
+      currentLane = 1;
+      bgmStep = 0;
+      score = 0;
+      distance = 0;
+      safetyDistance = 68;
+      nextGateMeters = FIRST_GATE_METERS;
+      isRunning = true;
+      isEndingSequence = false;
+      isQuestionOpen = false;
+
+      document.getElementById("studentBox").style.left = LANE_CENTERS[currentLane];
+      syncActiveLaneUI();
+      document.getElementById("startScreen").classList.add("hidden");
+      document.getElementById("guideScreen").classList.add("hidden");
+      document.getElementById("gameOverScreen").classList.add("hidden");
+      document.getElementById("winLevel1Screen").classList.add("hidden");
+      document.getElementById("questionModal").style.display = "none";
+      stageEl.classList.remove("paused");
+
+      updateHud();
+      spawnDeskDividers();
+      startBgmLoop();
+      beep(587, 0.12, "triangle");
+
+      spawnTimer = setInterval(spawnItem, 920);
+      deskTimer = setInterval(spawnDeskDividers, 440);
+      loopTimer = setInterval(gameLoop, 25);
+    }
+
+    startLobbyBgmLoop();
+  </script>
+</body>
+</html>
