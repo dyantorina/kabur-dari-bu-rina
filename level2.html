@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kabur dari Bu Rina! — Level 2 (Math Adventure)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: #0f172a;
+      color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .game-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100dvh;
+      background: #1e293b;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.65);
+    }
+
+    /* TOP HUD */
+    .top-hud {
+      background: rgba(15, 23, 42, 0.96);
+      color: #fff;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .hud-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .badge {
+      background: rgba(255, 255, 255, 0.14);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .badge-level { background: #2563eb; color: #ffffff; }
+    .badge-score { background: #fbbf24; color: #451a03; }
+    .badge-dist { background: #38bdf8; color: #082f49; }
+    .btn-mini {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-mini.paused-state {
+      background: #fbbf24;
+      color: #451a03;
+      border-color: #fef08a;
+      font-weight: 900;
+    }
+
+    /* PLAYER IDENTITY STRIP */
+    .player-strip {
+      background: #1e293b;
+      color: #fde68a;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 20;
+    }
+
+    /* PROXIMITY BAR */
+    .chase-bar-wrap {
+      background: #0f172a;
+      padding: 6px 12px 8px;
+      color: #e2e8f0;
+      font-size: 0.72rem;
+      font-weight: 800;
+      z-index: 20;
+    }
+    .chase-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .chase-track {
+      height: 8px;
+      background: #334155;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .chase-fill {
+      height: 100%;
+      width: 65%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+      transition: width 0.25s ease;
+    }
+
+    /* BANNER KOIN PERTANYAAN */
+    .q-coin-banner {
+      position: absolute;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94);
+      color: #fef08a;
+      border: 1.5px solid #fbbf24;
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.74rem;
+      font-weight: 900;
+      z-index: 16;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    }
+    .q-coin-banner.show { display: block; }
+
+    /* BANNER JEDA / PAUSE DI ATAS LINTASAN */
+    .pause-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 23, 42, 0.92);
+      color: #ffffff;
+      border: 2px solid #fbbf24;
+      border-radius: 18px;
+      padding: 16px 20px;
+      text-align: center;
+      z-index: 30;
+      display: none;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+      min-width: 240px;
+    }
+    .pause-banner.show { display: block; }
+    .pause-banner h3 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      color: #fde047;
+      font-weight: 900;
+    }
+    .pause-banner p {
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+    }
+    .btn-resume-inline {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #451a03;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 0.86rem;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* TRACK AREA: LATAR UTUH TIDAK TERPUTUS */
+    .track-stage {
+      position: relative;
+      flex: 1;
+      background: url("lintasan-2.png") center / cover no-repeat;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .motion-tick-line {
+      position: absolute;
+      left: 22%;
+      right: 22%;
+      height: 2px;
+      background: rgba(255, 251, 235, 0.24);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* AREA KLIK 3 LINTASAN */
+    .lanes-grid {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: transparent;
+      z-index: 3;
+    }
+    .lane {
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .lane-label {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.88);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      z-index: 5;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .lane.active-lane .lane-label {
+      background: #fbbf24;
+      color: #451a03;
+      border-color: #fef08a;
+    }
+
+    /* RINTANGAN PALANG, ATAP KERETA & KOIN DI TITIK LINTASAN (31%, 50%, 69%) */
+    .barrier-entity {
+      position: absolute;
+      top: -46px;
+      width: 56px;
+      height: 24px;
+      transform: translateX(-50%);
+      border-radius: 6px;
+      background: repeating-linear-gradient(
+        -45deg,
+        #ef4444,
+        #ef4444 8px,
+        #ffffff 8px,
+        #ffffff 16px
+      );
+      border: 2px solid #7f1d1d;
+      box-shadow: 0 5px 10px rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.56rem;
+      font-weight: 900;
+      color: #1e293b;
+      z-index: 7;
+    }
+
+    .train-entity {
+      position: absolute;
+      top: -120px;
+      width: 56px;
+      height: 112px;
+      transform: translateX(-50%);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 72%, #1e3a8a 100%);
+      border: 2px solid #dbeafe;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 3px;
+      z-index: 8;
+      color: #ffffff;
+      font-weight: 900;
+    }
+    .train-roof-badge {
+      background: rgba(251, 191, 36, 0.96);
+      color: #451a03;
+      font-size: 0.55rem;
+      padding: 2px 5px;
+      border-radius: 999px;
+      border: 1px solid #fef08a;
+      white-space: nowrap;
+    }
+    .train-windshield {
+      width: 40px;
+      height: 22px;
+      background: #0f172a;
+      border: 1.5px solid #93c5fd;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.64rem;
+    }
+    .train-lights {
+      display: flex;
+      justify-content: space-between;
+      width: 36px;
+      font-size: 0.58rem;
+    }
+
+    .coin-entity {
+      position: absolute;
+      top: -44px;
+      width: 35px;
+      height: 35px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fef08a, #f59e0b 72%, #b45309 100%);
+      border: 2px solid #fef9c3;
+      box-shadow: 0 5px 10px rgba(245, 158, 11, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.84rem;
+      font-weight: 900;
+      color: #78350f;
+      z-index: 9;
+    }
+
+    /* KOIN PERTANYAAN (❓) DI SEMUA 3 LINTASAN */
+    .question-coin-entity {
+      position: absolute;
+      top: -52px;
+      width: 40px;
+      height: 40px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fef9c3, #fbbf24 68%, #d97706 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.02rem;
+      font-weight: 900;
+      color: #451a03;
+      z-index: 11;
+      animation: qCoinPulse 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes qCoinPulse {
+      from { transform: translateX(-50%) scale(0.95); }
+      to { transform: translateX(-50%) scale(1.08); }
+    }
+
+    /* KARAKTER MURID & BU RINA BERLARI SESUAI LINTASAN */
+    .char-box {
+      position: absolute;
+      transform: translateX(-50%);
+      width: 58px;
+      height: 78px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      transition: left 0.16s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.18s ease;
+      z-index: 12;
+    }
+    .char-shadow {
+      position: absolute;
+      bottom: 11px;
+      width: 34px;
+      height: 9px;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 50%;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      z-index: -1;
+    }
+    .char-box.jumping .char-shadow {
+      transform: scale(0.52);
+      opacity: 0.15;
+    }
+    .char-box.on-roof .char-shadow {
+      bottom: 5px;
+      background: rgba(254, 240, 138, 0.5);
+    }
+    .runner-legs {
+      position: relative;
+      width: 30px;
+      height: 11px;
+      margin-top: -3px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+    .leg-bar {
+      width: 6px;
+      height: 10px;
+      border-radius: 999px;
+      background: #1e293b;
+      border: 1px solid #f8fafc;
+      transform-origin: top center;
+    }
+    .track-stage:not(.paused) .char-box:not(.jumping) .leg-left {
+      animation: legSwingLeft 0.22s ease-in-out infinite alternate;
+    }
+    .track-stage:not(.paused) .char-box:not(.jumping) .leg-right {
+      animation: legSwingRight 0.22s ease-in-out infinite alternate;
+    }
+    @keyframes legSwingLeft {
+      from { transform: rotate(-28deg) translateY(0px); }
+      to { transform: rotate(28deg) translateY(-2px); }
+    }
+    @keyframes legSwingRight {
+      from { transform: rotate(28deg) translateY(-2px); }
+      to { transform: rotate(-28deg) translateY(0px); }
+    }
+    .char-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.4);
+      border: 2.5px solid #ffffff;
+      background: #fef3c7;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .char-box.jumping .char-avatar {
+      transform: translateY(-26px) scale(1.22) rotate(8deg);
+    }
+    .char-box.on-roof .char-avatar {
+      transform: translateY(-13px) scale(1.08);
+      border-color: #38bdf8;
+    }
+    .student-avatar {
+      border-color: #fde047;
+      animation: sprintStride 0.22s infinite alternate;
+    }
+    .teacher-avatar {
+      border-color: #fb7185;
+      animation: sprintStride 0.18s infinite alternate-reverse;
+    }
+    .track-stage.paused .student-avatar,
+    .track-stage.paused .teacher-avatar { animation-play-state: paused; }
+    @keyframes sprintStride {
+      0% { transform: translateY(0px) rotate(-6deg); }
+      100% { transform: translateY(-5px) rotate(6deg); }
+    }
+    .char-tag {
+      margin-top: 2px;
+      background: rgba(15, 23, 42, 0.92);
+      color: #fff;
+      font-size: 0.64rem;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 999px;
+      white-space: nowrap;
+      max-width: 78px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .fx-comic-pop {
+      position: absolute;
+      font-size: 1.4rem;
+      font-weight: 900;
+      z-index: 25;
+      pointer-events: none;
+      animation: comicBounce 0.45s ease infinite alternate;
+    }
+    @keyframes comicBounce {
+      from { transform: translateY(0px) scale(0.95) rotate(-6deg); }
+      to { transform: translateY(-8px) scale(1.15) rotate(6deg); }
+    }
+    .student-dizzy {
+      animation: dizzySpin 0.28s linear infinite !important;
+      transform: rotate(-72deg) scale(0.92) !important;
+    }
+    @keyframes dizzySpin {
+      0% { transform: rotate(-68deg) translateX(-3px); }
+      50% { transform: rotate(-76deg) translateX(3px); }
+      100% { transform: rotate(-68deg) translateX(-3px); }
+    }
+    .teacher-gloating {
+      animation: gloatJump 0.24s ease infinite alternate !important;
+    }
+    @keyframes gloatJump {
+      from { transform: translateY(0px) scale(1.05) rotate(-5deg); }
+      to { transform: translateY(-12px) scale(1.14) rotate(6deg); }
+    }
+    .student-celebrate {
+      animation: celebrateHop 0.3s ease infinite alternate !important;
+    }
+    @keyframes celebrateHop {
+      from { transform: translateY(0px) scale(1.1) rotate(-8deg); }
+      to { transform: translateY(-16px) scale(1.22) rotate(8deg); }
+    }
+
+    /* KONTROL BAWAH */
+    .controls-bar {
+      background: #0f172a;
+      padding: 9px 10px 13px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      z-index: 20;
+    }
+    .btn-lane {
+      background: #1e293b;
+      color: #fff;
+      border: 1.5px solid #475569;
+      border-radius: 12px;
+      padding: 10px 4px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-lane.active-btn {
+      background: #2563eb;
+      border-color: #fde047;
+      color: #fef08a;
+    }
+    .btn-jump {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 12px;
+      padding: 10px 4px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .btn-jump:active { transform: scale(0.96); }
+
+    /* MODAL SOAL BILANGAN BERPANGKAT (30 DETIK) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.82);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 430px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 16px;
+      box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+    .modal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .topic-tag {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 0.76rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .q-timer-pill {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1.5px solid #f59e0b;
+      font-size: 0.82rem;
+      font-weight: 900;
+      padding: 4px 11px;
+      border-radius: 999px;
+    }
+    .q-timer-pill.danger {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #ef4444;
+    }
+    .math-q {
+      font-size: 1.32rem;
+      font-weight: 900;
+      margin: 10px 0 14px;
+      color: #0f172a;
+      line-height: 1.38;
+    }
+    .ans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-ans {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-ans:hover { background: #eff6ff; border-color: #2563eb; }
+
+    /* OVERLAY SCREENS */
+    .overlay-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(165deg, #1e1b4b 0%, #1d4ed8 58%, #0284c7 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 18px 16px;
+      z-index: 60;
+      overflow-y: auto;
+    }
+    .overlay-screen.win-screen {
+      background: linear-gradient(165deg, #064e3b 0%, #047857 55%, #d97706 100%);
+    }
+    .overlay-screen.hidden { display: none; }
+
+    .hero-duo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      padding: 10px 16px;
+      border-radius: 22px;
+      margin-bottom: 8px;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+    }
+    .hero-duo img {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2.5px solid #fde047;
+      background: #fef3c7;
+    }
+    .overlay-card {
+      background: rgba(15, 23, 42, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin: 8px 0 12px;
+      width: 100%;
+      max-width: 395px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+    .sync-pill {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.16);
+      color: #fef08a;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #451a03;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 20px;
+      font-size: 0.98rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      width: 100%;
+      max-width: 395px;
+    }
+    .btn-secondary {
+      margin-top: 8px;
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      max-width: 395px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="game-shell">
+    <div class="top-hud">
+      <div class="hud-group">
+        <span class="badge badge-level">LVL 2 • REL</span>
+        <span class="badge badge-score" id="scoreHud">⭐ 0</span>
+        <span class="badge badge-dist" id="distHud">🏃 0 / 2000 m</span>
+      </div>
+      <div class="hud-group">
+        <button class="btn-mini" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
+        <button class="btn-mini" id="soundBtn" onclick="toggleSound()">🔊</button>
+        <button class="btn-mini" onclick="startGame()">↻</button>
+      </div>
+    </div>
+
+    <div class="player-strip">
+      <span id="hudPlayerName">👤 Murid SMKN 4</span>
+      <span id="hudPlayerClass">Kelas X</span>
+    </div>
+
+    <div class="chase-bar-wrap">
+      <div class="chase-labels">
+        <span id="postureStatusText">Aksi: Berlari di Lintasan 🏃</span>
+        <span id="chaseStatusText">Kecepatan Tinggi</span>
+      </div>
+      <div class="chase-track">
+        <div class="chase-fill" id="chaseFill"></div>
+      </div>
+    </div>
+
+    <div class="track-stage paused" id="trackStage">
+      <div class="q-coin-banner" id="qCoinBanner">❓ Koin Pertanyaan muncul di 3 lintasan — pilih lintasanmu!</div>
+
+      <div class="pause-banner" id="pauseBanner">
+        <h3>⏸️ Permainan Dijeda</h3>
+        <p>Klik tombol <strong>Lanjut</strong> untuk memulai kembali.</p>
+        <button class="btn-resume-inline" onclick="togglePause()">▶️ Lanjut Main</button>
+      </div>
+
+      <div class="lanes-grid">
+        <div class="lane" id="lane-0" onclick="moveToLane(0)"><span class="lane-label">LINTASAN 1</span></div>
+        <div class="lane active-lane" id="lane-1" onclick="moveToLane(1)"><span class="lane-label">LINTASAN 2</span></div>
+        <div class="lane" id="lane-2" onclick="moveToLane(2)"><span class="lane-label">LINTASAN 3</span></div>
+      </div>
+
+      <div class="char-box" id="teacherBox" style="bottom: 20px; left: 50%;">
+        <div class="char-shadow"></div>
+        <img src="bu-rina.png" alt="Bu Rina" class="char-avatar teacher-avatar" id="teacherImg" />
+        <div class="runner-legs">
+          <span class="leg-bar leg-left"></span>
+          <span class="leg-bar leg-right"></span>
+        </div>
+        <span class="char-tag">Bu Rina</span>
+      </div>
+
+      <div class="char-box" id="studentBox" style="bottom: 118px; left: 50%;">
+        <div class="char-shadow"></div>
+        <img src="murid.png" alt="Murid" class="char-avatar student-avatar" id="studentImg" />
+        <div class="runner-legs">
+          <span class="leg-bar leg-left"></span>
+          <span class="leg-bar leg-right"></span>
+        </div>
+        <span class="char-tag" id="studentAvatarTag">Murid</span>
+      </div>
+    </div>
+
+    <div class="controls-bar">
+      <button class="btn-lane" id="ctrl-0" onclick="moveToLane(0)">⬅️ Lintasan 1</button>
+      <button class="btn-lane active-btn" id="ctrl-1" onclick="moveToLane(1)">⬇️ Lintasan 2</button>
+      <button class="btn-lane" id="ctrl-2" onclick="moveToLane(2)">➡️ Lintasan 3</button>
+      <button class="btn-jump" id="btnJump" onclick="triggerJump()">🦘 Lompat</button>
+    </div>
+  </div>
+
+  <!-- MODAL SOAL BILANGAN BERPANGKAT (30 DETIK) -->
+  <div class="modal-backdrop" id="questionModal">
+    <div class="modal-card">
+      <div class="modal-top">
+        <span class="topic-tag" id="qTopic">Bilangan Berpangkat</span>
+        <span class="q-timer-pill" id="qTimerBadge">⏱️ 30s</span>
+      </div>
+      <div style="font-size:0.82rem; font-weight:700; color:#64748b;">
+        Koin ❓ di lintasan terpilih! Waktu <strong>30 detik</strong> — jawab soal bilangan berpangkat:
+      </div>
+      <div class="math-q" id="qText">2³ × 2⁴ = ?</div>
+      <div class="ans-grid" id="ansGrid"></div>
+    </div>
+  </div>
+
+  <!-- LAYAR PEMBUKA LEVEL 2 -->
+  <div class="overlay-screen" id="startScreenLv2">
+    <div class="hero-duo">
+      <img src="murid.png" alt="Murid" />
+      <span style="font-size:1.5rem; font-weight:900;">🚆⚡</span>
+      <img src="bu-rina.png" alt="Bu Rina" />
+    </div>
+    <h1 style="margin:0 0 4px; font-size:1.45rem; font-weight:900; color:#fde047;">
+      MATH ADVENTURE • LEVEL 2
+    </h1>
+    <p id="lv2IdentityLine" style="margin:0 0 4px; font-size:0.88rem; font-weight:800; color:#fef08a;"></p>
+    <p id="lv2PrepLine" style="margin:0; font-size:0.8rem; opacity:0.92;"></p>
+
+    <div class="overlay-card">
+      <strong>Cara Main di 3 Lintasan:</strong><br/>
+      1. <strong>Lintasan 1, 2, &amp; 3:</strong> murid &amp; Bu Rina berlari di lintasan; ambil koin ⭐, loncati <strong>PALANG</strong>, atau naik ke <strong>ATAP</strong> kereta 🚆.<br/>
+      2. <strong>Koin Pertanyaan (❓):</strong> muncul di semua lintasan—pilih lintasanmu, lalu pop-up soal pangkat (<strong>30 detik</strong>) akan muncul saat koin tersentuh!
+    </div>
+
+    <button class="btn-primary" onclick="startGame()">🚀 Mulai Lari Level 2!</button>
+    <button class="btn-secondary" onclick="kembaliKeBuku()">📘 Kembali ke Buku Interaktif</button>
+  </div>
+
+  <!-- LAYAR GAME OVER LEVEL 2 -->
+  <div class="overlay-screen hidden" id="gameOverScreen">
+    <div class="hero-duo">
+      <img src="bu-rina.png" alt="Bu Rina" />
+      <span style="font-size:1.4rem; font-weight:900;">💥💫</span>
+      <img src="murid.png" alt="Murid" />
+    </div>
+    <h2 style="margin:0 0 4px; font-size:1.55rem; font-weight:900; color:#fde047;">TERTANGKAP BU RINA!</h2>
+    <p id="koStudentInfo" style="margin:0 0 6px; font-size:0.84rem; font-weight:800; color:#fde68a;"></p>
+    <p id="gameOverReason" style="margin:0 0 10px; font-size:0.86rem; font-weight:700;"></p>
+    <div class="overlay-card" style="text-align:center;">
+      <div>Skor Level 2: <strong id="finalScoreText">0</strong></div>
+      <div>Jarak Tempuh: <strong id="finalDistText">0 m</strong> / 2.000 m</div>
+      <div class="sync-pill" id="koSyncText"></div>
+    </div>
+    <button class="btn-primary" onclick="startGame()">↻ Coba Lagi Level 2!</button>
+    <button class="btn-secondary" onclick="kembaliKeBuku()">📘 Ulangi Materi &amp; Latihan</button>
+  </div>
+
+  <!-- LAYAR SELEBRASI TAMAT LEVEL 2 -->
+  <div class="overlay-screen win-screen hidden" id="winLevel2Screen">
+    <div class="hero-duo">
+      <img src="murid.png" alt="Murid" />
+      <span style="font-size:1.7rem; font-weight:900;">🏆🎉</span>
+      <img src="bu-rina.png" alt="Bu Rina" />
+    </div>
+    <h2 style="margin:0 0 4px; font-size:1.6rem; font-weight:900; color:#fde047;">TAMAT LEVEL 2!</h2>
+    <p id="winStudentInfo" style="margin:0 0 6px; font-size:0.86rem; font-weight:800; color:#fef08a;"></p>
+    <p style="margin:0 0 10px; font-size:0.88rem; font-weight:700;">
+      Hebat! Kamu menaklukkan lintasan, atap kereta, palang rintangan, dan soal pangkat 30 detik sampai 2.000 m!
+    </p>
+    <div class="overlay-card" style="text-align:center;">
+      <div>Total Skor Level 2: <strong id="winScoreText">0</strong></div>
+      <div>Jarak Tercapai: <strong>2.000 m (Tamat Level 2)</strong></div>
+      <div class="sync-pill" id="winSyncText"></div>
+    </div>
+    <button class="btn-primary" onclick="startGame()">🎉 Main Lagi Level 2</button>
+    <button class="btn-secondary" onclick="kembaliKeBuku()">📘 Kembali ke Buku Interaktif</button>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZXXrxd7cQTupYNo4area59OppIXeOekDjjiqwRmTyzX9w4r8J2BQTPtEnI7vMA0L79g/exec";
+
+    const params = new URLSearchParams(window.location.search);
+    const namaMurid = (params.get("nama") || localStorage.getItem("kabur_nama") || "Murid SMKN 4").trim();
+    const kelasMurid = (params.get("kelas") || localStorage.getItem("kabur_kelas") || "Kelas X").trim();
+    const skorLatihan = params.get("skorLatihan") || "";
+
+    localStorage.setItem("kabur_nama", namaMurid);
+    localStorage.setItem("kabur_kelas", kelasMurid);
+
+    document.getElementById("hudPlayerName").textContent = `👤 ${namaMurid}`;
+    document.getElementById("hudPlayerClass").textContent = kelasMurid;
+    document.getElementById("studentAvatarTag").textContent = namaMurid.split(" ")[0] || "Murid";
+    document.getElementById("lv2IdentityLine").textContent = `${namaMurid} • ${kelasMurid}`;
+    document.getElementById("lv2PrepLine").textContent = skorLatihan !== ""
+      ? `Skor Latihan Buku Interaktif: ${skorLatihan}`
+      : "Siap lari di 3 lintasan & soal pangkat 30 detik!";
+
+    const FIRST_GATE_METERS = 135;
+    const GATE_INTERVAL_METERS = 175;
+    const QUESTION_TIME_LIMIT = 30;
+    const TARGET_DISTANCE_LV2 = 2000;
+
+    // Pusat 3 jalur lintasan: Lintasan 1 (31%), Lintasan 2 (50%), Lintasan 3 (69%)
+    const LANE_CENTERS = ["31%", "50%", "69%"];
+
+    let currentLane = 1;
+    let isJumping = false;
+    let isOnTrainRoof = false;
+    let score = 0;
+    let distance = 0;
+    let safetyDistance = 65;
+    let isRunning = false;
+    let isPausedByUser = false;
+    let isEndingSequence = false;
+    let isQuestionOpen = false;
+    let questionWaveActive = false;
+    let soundOn = true;
+    let audioCtx = null;
+
+    /* ================= SOAL BILANGAN BERPANGKAT (30 DETIK) ================= */
+    const soalPangkatBank = [
+      { topic: "Perkalian Pangkat", q: "Sederhanakan: 2³ × 2⁴ = ...", ans: "2⁷", opts: ["2⁷", "2¹²", "4⁷", "2¹"] },
+      { topic: "Perkalian Pangkat", q: "Sederhanakan: 3² × 3⁵ = ...", ans: "3⁷", opts: ["3⁷", "3¹⁰", "9⁷", "3³"] },
+      { topic: "Perkalian Pangkat", q: "Sederhanakan: 5¹ × 5⁴ = ...", ans: "5⁵", opts: ["5⁵", "5⁴", "25⁵", "5³"] },
+      { topic: "Pembagian Pangkat", q: "Sederhanakan: 5⁶ : 5² = ...", ans: "5⁴", opts: ["5⁴", "5³", "5⁸", "5¹²"] },
+      { topic: "Pembagian Pangkat", q: "Sederhanakan: 2⁷ : 2³ = ...", ans: "2⁴", opts: ["2⁴", "2¹⁰", "4⁴", "2²¹"] },
+      { topic: "Pembagian Pangkat", q: "Sederhanakan: 3⁸ : 3⁵ = ...", ans: "3³", opts: ["3³", "3¹³", "9³", "3⁴⁰"] },
+      { topic: "Pangkat Dipangkatkan", q: "Sederhanakan: (2²)³ = ...", ans: "2⁶", opts: ["2⁶", "2⁵", "4⁶", "2⁸"] },
+      { topic: "Pangkat Dipangkatkan", q: "Sederhanakan: (3³)² = ...", ans: "3⁶", opts: ["3⁶", "3⁵", "9⁶", "3⁹"] },
+      { topic: "Pangkat Nol & Negatif", q: "Hitung nilai: 9⁰ + 2⁻² = ...", ans: "1 ¼", opts: ["1 ¼", "1 ½", "¼", "2 ¼"] },
+      { topic: "Pangkat Nol & Negatif", q: "Hitung nilai: 5⁰ + 2⁻³ = ...", ans: "1 ⅛", opts: ["1 ⅛", "1 ⅙", "⅛", "⅝"] },
+      { topic: "Pangkat Negatif", q: "Bentuk sederhana dari 2⁻³ adalah ...", ans: "1/8", opts: ["1/8", "-8", "-6", "1/6"] },
+      { topic: "Pangkat Negatif", q: "Bentuk sederhana dari 3⁻² adalah ...", ans: "1/9", opts: ["1/9", "-9", "-6", "1/6"] },
+      { topic: "Nilai Pangkat", q: "Nilai dari 2⁵ + 3² adalah ...", ans: "41", opts: ["41", "34", "19", "49"] },
+      { topic: "Kontekstual Pinjol & Pangkat", q: "Pola keterlambatan bayar hutang barang konsumtif mengikuti 3ⁿ (ribuan). Pada n = 3 besarnya ...", ans: "Rp27.000", opts: ["Rp27.000", "Rp9.000", "Rp18.000", "Rp81.000"] },
+      { topic: "Kontekstual Tabungan Pangkat", q: "Tabungan terencana mengikuti pola 2ⁿ (ribuan). Pada hari ke-4 besarnya 2⁴ × Rp1.000 = ...", ans: "Rp16.000", opts: ["Rp16.000", "Rp8.000", "Rp32.000", "Rp12.000"] }
+    ];
+
+    let questionQueue = [];
+
+    function refillQuestionQueue() {
+      questionQueue = [...soalPangkatBank];
+      for (let i = questionQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questionQueue[i], questionQueue[j]] = [questionQueue[j], questionQueue[i]];
+      }
+    }
+
+    function getNextQuestion() {
+      if (questionQueue.length === 0) refillQuestionQueue();
+      return questionQueue.pop();
+    }
+
+    /* ================= AUDIO & BGM ================= */
+    let bgmTimer = null;
+    let bgmStep = 0;
+    const bgmBassNotes = [146.83, 146.83, 196.00, 220.00, 164.81, 164.81, 196.00, 246.94];
+    const bgmLeadNotes = [587.33, 0, 783.99, 659.25, 523.25, 659.25, 783.99, 880.00];
+
+    function beep(freq, dur = 0.1, type = "sine") {
+      if (!soundOn) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function playBgmTick() {
+      if (!soundOn || !isRunning || isPausedByUser || isQuestionOpen || isEndingSequence) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const idx = bgmStep % bgmBassNotes.length;
+
+        const bassOsc = audioCtx.createOscillator();
+        const bassGain = audioCtx.createGain();
+        bassOsc.type = "triangle";
+        bassOsc.frequency.setValueAtTime(bgmBassNotes[idx], now);
+        bassGain.gain.setValueAtTime(0.045, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+        bassOsc.connect(bassGain);
+        bassGain.connect(audioCtx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.18);
+
+        const leadFreq = bgmLeadNotes[idx];
+        if (leadFreq > 0) {
+          const leadOsc = audioCtx.createOscillator();
+          const leadGain = audioCtx.createGain();
+          leadOsc.type = "sine";
+          leadOsc.frequency.setValueAtTime(leadFreq, now);
+          leadGain.gain.setValueAtTime(0.028, now);
+          leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          leadOsc.connect(leadGain);
+          leadGain.connect(audioCtx.destination);
+          leadOsc.start(now);
+          leadOsc.stop(now + 0.15);
+        }
+        bgmStep++;
+      } catch (e) {}
+    }
+
+    function startBgmLoop() {
+      stopBgmLoop();
+      if (!soundOn || !isRunning || isPausedByUser || isQuestionOpen || isEndingSequence) return;
+      bgmTimer = setInterval(playBgmTick, 210);
+    }
+
+    function stopBgmLoop() {
+      clearInterval(bgmTimer);
+      bgmTimer = null;
+    }
+
+    function toggleSound() {
+      soundOn = !soundOn;
+      document.getElementById("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+      if (soundOn && isRunning && !isPausedByUser) startBgmLoop();
+      else stopBgmLoop();
+    }
+
+    /* ================= POSISI & LOMPAT MURID ================= */
+    const stageEl = document.getElementById("trackStage");
+    const studentBox = document.getElementById("studentBox");
+    const teacherBox = document.getElementById("teacherBox");
+    let jumpTimeout = null;
+    let touchStartX = null;
+    let touchStartY = null;
+
+    function updatePostureUI() {
+      const postureEl = document.getElementById("postureStatusText");
+      studentBox.classList.toggle("jumping", isJumping);
+      studentBox.classList.toggle("on-roof", isOnTrainRoof && !isJumping);
+
+      if (isPausedByUser) postureEl.textContent = "Status: Dijeda ⏸️";
+      else if (questionWaveActive) postureEl.textContent = "Pilih Koin ❓ di Lintasan!";
+      else if (isJumping) postureEl.textContent = "Aksi: Melompat 🦘";
+      else if (isOnTrainRoof) postureEl.textContent = "Aksi: Di Atas Kereta 🚆";
+      else postureEl.textContent = `Aksi: Lari Lintasan ${currentLane + 1} 🏃`;
+    }
+
+    function syncActiveLaneUI() {
+      for (let i = 0; i < 3; i++) {
+        const laneEl = document.getElementById(`lane-${i}`);
+        const ctrlEl = document.getElementById(`ctrl-${i}`);
+        if (laneEl) laneEl.classList.toggle("active-lane", i === currentLane);
+        if (ctrlEl) ctrlEl.classList.toggle("active-btn", i === currentLane);
+      }
+    }
+
+    function moveToLane(laneIdx) {
+      if (!isRunning || isPausedByUser || isQuestionOpen || isEndingSequence) return;
+      const targetLane = Math.max(0, Math.min(2, laneIdx));
+      if (targetLane !== currentLane) {
+        currentLane = targetLane;
+        studentBox.style.left = LANE_CENTERS[currentLane];
+        teacherBox.style.left = LANE_CENTERS[currentLane];
+        if (isOnTrainRoof && !isJumping) {
+          isOnTrainRoof = false;
+          studentBox.style.bottom = "118px";
+        }
+        syncActiveLaneUI();
+        updatePostureUI();
+        beep(440, 0.07, "triangle");
+      }
+    }
+
+    function triggerJump() {
+      if (!isRunning || isPausedByUser || isQuestionOpen || isEndingSequence || isJumping) return;
+      isJumping = true;
+      studentBox.style.bottom = isOnTrainRoof ? "160px" : "150px";
+      updatePostureUI();
+      beep(620, 0.12, "triangle");
+
+      clearTimeout(jumpTimeout);
+      jumpTimeout = setTimeout(() => {
+        isJumping = false;
+        studentBox.style.bottom = isOnTrainRoof ? "146px" : "118px";
+        updatePostureUI();
+      }, 420);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "p" || e.key === "Escape") {
+        if (isRunning && !isEndingSequence) {
+          togglePause();
+          return;
+        }
+      }
+      if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") moveToLane(currentLane - 1);
+      if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") moveToLane(currentLane + 1);
+      if (e.key === "ArrowUp" || e.key.toLowerCase() === "w" || e.key === " ") {
+        e.preventDefault();
+        triggerJump();
+      }
+    });
+
+    stageEl.addEventListener("touchstart", (e) => {
+      if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    stageEl.addEventListener("touchend", (e) => {
+      if (touchStartX === null || touchStartY === null || e.changedTouches.length === 0) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (dy < -30 && Math.abs(dy) > Math.abs(dx)) {
+        triggerJump();
+      } else if (Math.abs(dx) > 26) {
+        moveToLane(dx > 0 ? currentLane + 1 : currentLane - 1);
+      }
+      touchStartX = null;
+      touchStartY = null;
+    }, { passive: true });
+
+    /* ================= PAUSE & RESUME PERMAINAN ================= */
+    function updatePauseButtonUI() {
+      const btn = document.getElementById("pauseBtn");
+      const banner = document.getElementById("pauseBanner");
+      if (!btn || !banner) return;
+      if (isPausedByUser) {
+        btn.textContent = "▶️ Lanjut";
+        btn.classList.add("paused-state");
+        banner.classList.add("show");
+      } else {
+        btn.textContent = "⏸️ Pause";
+        btn.classList.remove("paused-state");
+        banner.classList.remove("show");
+      }
+      updatePostureUI();
+    }
+
+    function togglePause() {
+      if (!isRunning || isEndingSequence) return;
+
+      if (!isPausedByUser) {
+        isPausedByUser = true;
+        stopBgmLoop();
+        clearInterval(questionCountdown);
+        stageEl.classList.add("paused");
+        updatePauseButtonUI();
+        beep(360, 0.09, "triangle");
+      } else {
+        isPausedByUser = false;
+        updatePauseButtonUI();
+        beep(587, 0.09, "triangle");
+
+        if (isQuestionOpen) {
+          clearInterval(questionCountdown);
+          questionCountdown = setInterval(() => {
+            if (!isRunning || isPausedByUser || !isQuestionOpen) {
+              clearInterval(questionCountdown);
+              return;
+            }
+            qTimeLeft -= 1;
+            updateQuestionTimerBadge();
+            if (qTimeLeft <= 0) {
+              clearInterval(questionCountdown);
+              resolveQuestion(false, true);
+            }
+          }, 1000);
+        } else {
+          stageEl.classList.remove("paused");
+          startBgmLoop();
+        }
+      }
+    }
+
+    /* ================= KOIN PERTANYAAN DI 3 LINTASAN + POP-UP 30 DETIK ================= */
+    let questionCountdown = null;
+    let qTimeLeft = QUESTION_TIME_LIMIT;
+
+    function clearQuestionCoins() {
+      questionWaveActive = false;
+      document.getElementById("qCoinBanner").classList.remove("show");
+      for (let i = entities.length - 1; i >= 0; i--) {
+        if (entities[i].kind === "qcoin") {
+          entities[i].el.remove();
+          entities.splice(i, 1);
+        }
+      }
+      updatePostureUI();
+    }
+
+    function spawnQuestionCoinsInAllLanes() {
+      if (!isRunning || isPausedByUser || isQuestionOpen || isEndingSequence || questionWaveActive) return;
+      questionWaveActive = true;
+      document.getElementById("qCoinBanner").classList.add("show");
+      updatePostureUI();
+      beep(740, 0.11, "triangle");
+
+      for (let lane = 0; lane < 3; lane++) {
+        const el = document.createElement("div");
+        el.className = "question-coin-entity";
+        el.style.left = LANE_CENTERS[lane];
+        el.style.top = "-52px";
+        el.textContent = "❓";
+        stageEl.appendChild(el);
+        entities.push({ el, lane, y: -52, h: 40, kind: "qcoin", hit: false });
+      }
+    }
+
+    function updateQuestionTimerBadge() {
+      const badge = document.getElementById("qTimerBadge");
+      badge.textContent = `⏱️ ${qTimeLeft}s`;
+      badge.classList.toggle("danger", qTimeLeft <= 7);
+    }
+
+    function openQuestionModal() {
+      clearQuestionCoins();
+      isQuestionOpen = true;
+      stopBgmLoop();
+      stageEl.classList.add("paused");
+
+      const item = getNextQuestion();
+      document.getElementById("qTopic").textContent = item.topic;
+      document.getElementById("qText").textContent = item.q;
+
+      const shuffled = [...item.opts].sort(() => Math.random() - 0.5);
+      const grid = document.getElementById("ansGrid");
+      grid.innerHTML = "";
+      shuffled.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "btn-ans";
+        btn.textContent = opt;
+        btn.onclick = () => resolveQuestion(opt === item.ans, false);
+        grid.appendChild(btn);
+      });
+
+      qTimeLeft = QUESTION_TIME_LIMIT;
+      updateQuestionTimerBadge();
+      document.getElementById("questionModal").style.display = "flex";
+
+      clearInterval(questionCountdown);
+      questionCountdown = setInterval(() => {
+        if (!isRunning || isPausedByUser || !isQuestionOpen) {
+          clearInterval(questionCountdown);
+          return;
+        }
+        qTimeLeft -= 1;
+        updateQuestionTimerBadge();
+        if (qTimeLeft <= 0) {
+          clearInterval(questionCountdown);
+          resolveQuestion(false, true);
+        }
+      }, 1000);
+    }
+
+    function resolveQuestion(isCorrect, isTimeout = false) {
+      clearInterval(questionCountdown);
+      document.getElementById("questionModal").style.display = "none";
+      isQuestionOpen = false;
+      if (!isRunning || isEndingSequence) return;
+      if (!isPausedByUser) stageEl.classList.remove("paused");
+
+      if (isCorrect) {
+        score += 75;
+        safetyDistance = Math.min(100, safetyDistance + 20);
+        beep(880, 0.14, "triangle");
+      } else {
+        safetyDistance = Math.max(0, safetyDistance - 32);
+        beep(190, 0.24, "sawtooth");
+      }
+      updateHud();
+
+      if (safetyDistance <= 0) {
+        const reason = isTimeout
+          ? "Waktu 30 detik habis dan Bu Rina berhasil menyusulmu!"
+          : "Jawaban kurang tepat membuat Bu Rina menyusulmu di Level 2!";
+        startCaughtFunnySequence(reason);
+        return;
+      }
+      if (!isPausedByUser) startBgmLoop();
+    }
+
+    /* ================= EFEK GERAK HALUS, RINTANGAN PALANG, ATAP KERETA & KOIN ================= */
+    let spawnTimer = null;
+    let tickLineTimer = null;
+    let loopTimer = null;
+    let sequenceTimer = null;
+    let nextGateMeters = FIRST_GATE_METERS;
+    let entities = [];
+    let tickLines = [];
+
+    function spawnMotionTickLine() {
+      if (!isRunning || isPausedByUser || isQuestionOpen || isEndingSequence) return;
+      const el = document.createElement("div");
+      el.className = "motion-tick-line";
+      el.style.top = "-6px";
+      stageEl.appendChild(el);
+      tickLines.push({ el, y: -6 });
+    }
+
+    function spawnTrackEntity() {
+      if (!isRunning || isPausedByUser || isQuestionOpen || isEndingSequence || questionWaveActive) return;
+      const lane = Math.floor(Math.random() * 3);
+      const roll = Math.random();
+
+      if (roll < 0.36) {
+        const el = document.createElement("div");
+        el.className = "barrier-entity";
+        el.style.left = LANE_CENTERS[lane];
+        el.style.top = "-36px";
+        el.textContent = "PALANG";
+        stageEl.appendChild(el);
+        entities.push({ el, lane, y: -36, h: 24, kind: "barrier", hit: false });
+      } else if (roll < 0.68) {
+        const el = document.createElement("div");
+        el.className = "train-entity";
+        el.style.left = LANE_CENTERS[lane];
+        el.style.top = "-118px";
+        el.innerHTML = `
+          <span class="train-roof-badge">ATAP 🚆</span>
+          <div class="train-windshield">💡 💡</div>
+          <div class="train-lights"><span>🔆</span><span>🔆</span></div>
+        `;
+        stageEl.appendChild(el);
+        entities.push({ el, lane, y: -118, h: 112, kind: "train", hit: false });
+      } else {
+        const el = document.createElement("div");
+        el.className = "coin-entity";
+        el.style.left = LANE_CENTERS[lane];
+        el.style.top = "-40px";
+        el.textContent = "⭐";
+        stageEl.appendChild(el);
+        entities.push({ el, lane, y: -40, h: 35, kind: "coin", hit: false });
+      }
+    }
+
+    function updateCharactersVisual() {
+      const teacherBottom = 18 + ((100 - safetyDistance) / 100) * 72;
+      teacherBox.style.bottom = `${teacherBottom}px`;
+      teacherBox.style.left = LANE_CENTERS[currentLane];
+
+      const fill = document.getElementById("chaseFill");
+      const statusTxt = document.getElementById("chaseStatusText");
+      fill.style.width = `${safetyDistance}%`;
+
+      if (safetyDistance > 60) statusTxt.textContent = "Kecepatan Tinggi 😎";
+      else if (safetyDistance > 30) statusTxt.textContent = "Bu Rina Makin Dekat! 😬";
+      else statusTxt.textContent = "DARURAT! Hampir Tertangkap! 😱";
+    }
+
+    function updateHud() {
+      document.getElementById("scoreHud").textContent = `⭐ ${score}`;
+      document.getElementById("distHud").textContent = `🏃 ${Math.min(TARGET_DISTANCE_LV2, Math.floor(distance))} / ${TARGET_DISTANCE_LV2} m`;
+      updateCharactersVisual();
+    }
+
+    function stopGameIntervals() {
+      isRunning = false;
+      stopBgmLoop();
+      clearInterval(questionCountdown);
+      clearInterval(spawnTimer);
+      clearInterval(tickLineTimer);
+      clearInterval(loopTimer);
+      stageEl.classList.add("paused");
+    }
+
+    function clearFxPopups() {
+      stageEl.querySelectorAll(".fx-comic-pop").forEach(el => el.remove());
+      document.getElementById("studentImg").classList.remove("student-dizzy", "student-celebrate");
+      document.getElementById("teacherImg").classList.remove("teacher-gloating");
+    }
+
+    async function kirimRekapLevel2(statusText, targetElId) {
+      const el = document.getElementById(targetElId);
+      if (!GOOGLE_SCRIPT_URL) {
+        el.style.display = "none";
+        return;
+      }
+      el.style.display = "block";
+      el.textContent = "⏳ Mengirim hasil Level 2 ke rekapan guru...";
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            nama: namaMurid,
+            kelas: kelasMurid,
+            status: `LVL 2 - ${statusText}`,
+            benar: Math.floor(distance),
+            total: TARGET_DISTANCE_LV2,
+            nilai: Math.min(100, Math.round((distance / TARGET_DISTANCE_LV2) * 100)),
+            xp: score
+          })
+        });
+        el.textContent = "✅ Hasil Level 2 sudah dikirim ke Google Sheets!";
+      } catch (e) {
+        el.textContent = "⚠️ Gagal mengirim hasil, cek koneksi internet.";
+      }
+    }
+
+    function launchConfetti() {
+      const canvas = document.getElementById("confettiCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const colors = ["#fbbf24", "#22c55e", "#38bdf8", "#f43f5e", "#a855f7"];
+      const pieces = Array.from({ length: 90 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 140,
+        vx: (Math.random() - 0.5) * 6,
+        vy: Math.random() * 4 + 2.5,
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * 360
+      }));
+      let frame = 0;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += 6;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+        });
+        frame++;
+        if (frame < 120) requestAnimationFrame(draw);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      draw();
+    }
+
+    function startCaughtFunnySequence(reason) {
+      if (isEndingSequence) return;
+      isEndingSequence = true;
+      isJumping = false;
+      isOnTrainRoof = false;
+      isPausedByUser = false;
+      updatePauseButtonUI();
+      clearQuestionCoins();
+      stopGameIntervals();
+      safetyDistance = 0;
+      updateHud();
+      updatePostureUI();
+
+      [420, 310, 220, 140].forEach((f, idx) => {
+        setTimeout(() => beep(f, 0.12, "sawtooth"), idx * 95);
+      });
+
+      document.getElementById("studentImg").classList.add("student-dizzy");
+      document.getElementById("teacherImg").classList.add("teacher-gloating");
+
+      const popCloud = document.createElement("div");
+      popCloud.className = "fx-comic-pop";
+      popCloud.style.left = LANE_CENTERS[currentLane];
+      popCloud.style.bottom = "175px";
+      popCloud.style.marginLeft = "-28px";
+      popCloud.textContent = "💥💫";
+      stageEl.appendChild(popCloud);
+
+      sequenceTimer = setTimeout(() => {
+        clearFxPopups();
+        document.getElementById("koStudentInfo").textContent = `${namaMurid} • ${kelasMurid}`;
+        document.getElementById("gameOverReason").textContent = reason;
+        document.getElementById("finalScoreText").textContent = score;
+        document.getElementById("finalDistText").textContent = `${Math.floor(distance)} m`;
+        document.getElementById("gameOverScreen").classList.remove("hidden");
+        kirimRekapLevel2(`GAME OVER (${Math.floor(distance)} m)`, "koSyncText");
+      }, 1300);
+    }
+
+    function startWinLevel2Sequence() {
+      if (isEndingSequence) return;
+      isEndingSequence = true;
+      distance = TARGET_DISTANCE_LV2;
+      isPausedByUser = false;
+      updatePauseButtonUI();
+      clearQuestionCoins();
+      stopGameIntervals();
+      updateHud();
+      launchConfetti();
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+        setTimeout(() => beep(f, 0.16, "triangle"), idx * 110);
+      });
+
+      document.getElementById("studentImg").classList.add("student-celebrate");
+
+      sequenceTimer = setTimeout(() => {
+        clearFxPopups();
+        document.getElementById("winStudentInfo").textContent = `${namaMurid} • ${kelasMurid}`;
+        document.getElementById("winScoreText").textContent = score;
+        document.getElementById("winLevel2Screen").classList.remove("hidden");
+        kirimRekapLevel2("TAMAT LEVEL 2 (2000 m)", "winSyncText");
+      }, 1300);
+    }
+
+    function gameLoop() {
+      if (!isRunning || isPausedByUser || isQuestionOpen || isEndingSequence) return;
+
+      distance += 0.72;
+      if (distance >= TARGET_DISTANCE_LV2) {
+        startWinLevel2Sequence();
+        return;
+      }
+
+      if (!questionWaveActive && Math.floor(distance) >= nextGateMeters) {
+        nextGateMeters += GATE_INTERVAL_METERS;
+        spawnQuestionCoinsInAllLanes();
+      }
+
+      const speed = 7.6 + Math.min(4.8, distance / 260);
+
+      for (let t = tickLines.length - 1; t >= 0; t--) {
+        const tl = tickLines[t];
+        tl.y += speed * 0.9;
+        tl.el.style.top = `${tl.y}px`;
+        if (tl.y > stageEl.clientHeight + 20) {
+          tl.el.remove();
+          tickLines.splice(t, 1);
+        }
+      }
+
+      const studentTop = stageEl.clientHeight - 118 - 62;
+      const studentBottom = stageEl.clientHeight - 118;
+      let overAnyTrain = false;
+      let reachedBottomQCoin = false;
+
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const ent = entities[i];
+        ent.y += speed;
+        ent.el.style.top = `${ent.y}px`;
+
+        const entityBottom = ent.y + ent.h;
+        const overlapsY = entityBottom >= studentTop + 8 && ent.y <= studentBottom - 6;
+
+        if (ent.kind === "qcoin") {
+          if (!ent.hit && ent.lane === currentLane && overlapsY) {
+            ent.hit = true;
+            openQuestionModal();
+            return;
+          }
+          if (ent.y > stageEl.clientHeight + 45) {
+            reachedBottomQCoin = true;
+            ent.el.remove();
+            entities.splice(i, 1);
+          }
+          continue;
+        }
+
+        if (ent.lane === currentLane && overlapsY) {
+          if (ent.kind === "coin" && !ent.hit) {
+            ent.hit = true;
+            score += 20;
+            safetyDistance = Math.min(100, safetyDistance + 5);
+            beep(880, 0.08, "sine");
+            ent.el.remove();
+            entities.splice(i, 1);
+            continue;
+          }
+
+          if (ent.kind === "barrier" && !ent.hit) {
+            if (isJumping) {
+              ent.hit = true;
+              score += 10;
+              beep(980, 0.07, "triangle");
+            } else {
+              ent.hit = true;
+              safetyDistance = Math.max(0, safetyDistance - 28);
+              beep(180, 0.2, "sawtooth");
+              ent.el.remove();
+              entities.splice(i, 1);
+              updateHud();
+              if (safetyDistance <= 0) {
+                startCaughtFunnySequence("Menabrak PALANG dan tertangkap Bu Rina!");
+                return;
+              }
+              continue;
+            }
+          }
+
+          if (ent.kind === "train") {
+            if (isJumping || isOnTrainRoof) {
+              overAnyTrain = true;
+              if (!isOnTrainRoof) {
+                isOnTrainRoof = true;
+                score += 15;
+                beep(740, 0.09, "triangle");
+              }
+            } else if (!ent.hit) {
+              ent.hit = true;
+              safetyDistance = Math.max(0, safetyDistance - 34);
+              beep(160, 0.24, "sawtooth");
+              ent.el.remove();
+              entities.splice(i, 1);
+              updateHud();
+              if (safetyDistance <= 0) {
+                startCaughtFunnySequence("Tidak melompat ke ATAP kereta dan tertangkap Bu Rina!");
+                return;
+              }
+              continue;
+            }
+          }
+        }
+
+        if (ent.y > stageEl.clientHeight + 50) {
+          ent.el.remove();
+          entities.splice(i, 1);
+        }
+      }
+
+      if (reachedBottomQCoin && questionWaveActive) {
+        clearQuestionCoins();
+      }
+
+      if (isOnTrainRoof && !overAnyTrain && !isJumping) {
+        isOnTrainRoof = false;
+        studentBox.style.bottom = "118px";
+      }
+      if (!isJumping) {
+        studentBox.style.bottom = isOnTrainRoof ? "146px" : "118px";
+      }
+      updatePostureUI();
+      updateHud();
+    }
+
+    function startGame() {
+      clearTimeout(sequenceTimer);
+      clearFxPopups();
+      clearQuestionCoins();
+      stopGameIntervals();
+
+      entities.forEach(e => e.el.remove());
+      entities = [];
+      tickLines.forEach(t => t.el.remove());
+      tickLines = [];
+
+      refillQuestionQueue();
+      currentLane = 1;
+      isJumping = false;
+      isOnTrainRoof = false;
+      isPausedByUser = false;
+      questionWaveActive = false;
+      bgmStep = 0;
+      score = 0;
+      distance = 0;
+      safetyDistance = 65;
+      nextGateMeters = FIRST_GATE_METERS;
+      isRunning = true;
+      isEndingSequence = false;
+      isQuestionOpen = false;
+
+      updatePauseButtonUI();
+      studentBox.style.left = LANE_CENTERS[currentLane];
+      teacherBox.style.left = LANE_CENTERS[currentLane];
+      studentBox.style.bottom = "118px";
+      syncActiveLaneUI();
+      updatePostureUI();
+
+      document.getElementById("startScreenLv2").classList.add("hidden");
+      document.getElementById("gameOverScreen").classList.add("hidden");
+      document.getElementById("winLevel2Screen").classList.add("hidden");
+      document.getElementById("questionModal").style.display = "none";
+      stageEl.classList.remove("paused");
+
+      updateHud();
+      startBgmLoop();
+      beep(659, 0.12, "triangle");
+
+      spawnTimer = setInterval(spawnTrackEntity, 720);
+      tickLineTimer = setInterval(spawnMotionTickLine, 210);
+      loopTimer = setInterval(gameLoop, 24);
+    }
+
+    function kembaliKeBuku() {
+      stopGameIntervals();
+      const url = `buku-interaktif-level2.html?nama=${encodeURIComponent(namaMurid)}&kelas=${encodeURIComponent(kelasMurid)}`;
+      window.location.href = url;
+    }
+  </script>
+</body>
+</html>

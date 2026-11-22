@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Buku Interaktif — Bilangan Berpangkat</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: #0f172a;
+      color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+    }
+    .book-frame {
+      width: 100%;
+      max-width: 500px;
+      min-height: 94dvh;
+      max-height: 96dvh;
+      background: #f8fafc;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 22px 54px rgba(0, 0, 0, 0.65);
+      border: 2px solid #334155;
+    }
+
+    /* HEADER ATAS */
+    .book-header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 60%, #0284c7 100%);
+      color: #ffffff;
+      padding: 14px 18px 16px;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      flex-shrink: 0;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .top-right-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .page-indicator {
+      background: rgba(251, 191, 36, 0.24);
+      border: 1px solid #fde047;
+      color: #fef08a;
+      font-size: 0.8rem;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+    .student-tag {
+      background: rgba(255, 255, 255, 0.18);
+      color: #f8fafc;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 11px;
+      border-radius: 999px;
+      max-width: 185px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .btn-bgm-toggle {
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid #6ee7b7;
+      color: #ecfdf5;
+      font-size: 0.76rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .btn-bgm-toggle.muted {
+      background: rgba(148, 163, 184, 0.25);
+      border-color: #cbd5e1;
+      color: #e2e8f0;
+    }
+    .book-header h1 {
+      margin: 0;
+      font-size: 1.42rem;
+      font-weight: 900;
+      line-height: 1.22;
+    }
+    .header-sub {
+      margin: 5px 0 0;
+      font-size: 0.9rem;
+      color: #e0f2fe;
+      line-height: 1.38;
+      font-weight: 500;
+    }
+
+    /* DOT NAVIGASI HALAMAN */
+    .dots-strip {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 12px;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+    .page-dot {
+      width: 26px;
+      height: 9px;
+      border-radius: 999px;
+      background: #94a3b8;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.2s ease;
+    }
+    .page-dot.active {
+      width: 38px;
+      background: #3730a3;
+    }
+    .page-dot.done {
+      background: #16a34a;
+    }
+
+    /* AREA ISI PER HALAMAN */
+    .page-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* BANNER BU RINA DI SETIAP HALAMAN */
+    .guru-banner {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 18px;
+      padding: 13px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 5px 14px rgba(15, 23, 42, 0.07);
+      flex-shrink: 0;
+    }
+    .guru-avatar-wrap {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: #fef3c7;
+      border: 3px solid #f59e0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .guru-avatar-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .guru-speech {
+      margin: 0;
+      font-size: 0.94rem;
+      line-height: 1.45;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    /* JUDUL BAGIAN */
+    .sec-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .sec-head h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    .sec-pill {
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 11px;
+      border-radius: 999px;
+    }
+
+    /* KARTU MATERI SINGKAT */
+    .rule-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 16px;
+      border-left: 6px solid #4f46e5;
+      border-top: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .rule-card.amber { border-left-color: #d97706; }
+    .rule-card.emerald { border-left-color: #059669; }
+    .rule-card.rose { border-left-color: #e11d48; }
+
+    .rule-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .rule-title {
+      font-size: 1.08rem;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    .formula-badge {
+      background: #fef3c7;
+      border: 1.5px solid #f59e0b;
+      color: #92400e;
+      font-size: 1rem;
+      font-weight: 900;
+      padding: 5px 11px;
+      border-radius: 10px;
+    }
+    .rule-desc {
+      margin: 10px 0 0;
+      font-size: 0.96rem;
+      color: #334155;
+      line-height: 1.52;
+      font-weight: 500;
+    }
+    .rule-example {
+      margin-top: 12px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 10px 13px;
+      font-size: 0.96rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    /* KARTU SOAL PER HALAMAN */
+    .question-box {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+    .question-box.ctx-style {
+      border-color: #f59e0b;
+      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 25%);
+    }
+    .q-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .q-label {
+      background: #1e1b4b;
+      color: #fde047;
+      font-size: 0.82rem;
+      font-weight: 900;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+    .q-label.ctx {
+      background: #b45309;
+      color: #fef3c7;
+    }
+    .q-badge-ans {
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 4px 11px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #64748b;
+    }
+    .q-badge-ans.ok { background: #dcfce7; color: #15803d; }
+    .q-badge-ans.no { background: #fee2e2; color: #b91c1c; }
+
+    .q-text {
+      font-size: 1.12rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.52;
+      margin: 6px 0 14px;
+    }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .opt-btn {
+      background: #f8fafc;
+      color: #0f172a;
+      border: 2px solid #94a3b8;
+      border-radius: 14px;
+      padding: 12px 10px;
+      font-size: 1.04rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .opt-btn:hover:not(:disabled) {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+    .opt-btn:disabled { cursor: default; }
+    .opt-btn.correct {
+      background: #dcfce7;
+      border-color: #16a34a;
+      color: #14532d;
+    }
+    .opt-btn.wrong {
+      background: #fee2e2;
+      border-color: #dc2626;
+      color: #7f1d1d;
+    }
+
+    /* PEMBAHASAN TERTULIS + TOMBOL SUARA */
+    .pembahasan-wrap {
+      display: none;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 2px dashed #cbd5e1;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pembahasan-wrap.show { display: flex; }
+    .pembahasan-card {
+      background: #eff6ff;
+      border: 1.5px solid #93c5fd;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.92rem;
+      color: #1e3a8a;
+      line-height: 1.55;
+    }
+    .pembahasan-card ol {
+      margin: 6px 0 8px;
+      padding-left: 20px;
+    }
+    .pembahasan-card li { margin-bottom: 4px; }
+    .canda-box {
+      background: #fef9c3;
+      border: 1px dashed #eab308;
+      color: #713f12;
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .audio-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn-audio {
+      background: linear-gradient(135deg, #4f46e5, #0284c7);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-audio.playing {
+      background: linear-gradient(135deg, #059669, #10b981);
+    }
+    .btn-stop {
+      background: #e2e8f0;
+      color: #0f172a;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* RINGKASAN SKOR & TOMBOL LEVEL 2 DI HALAMAN 7 */
+    .score-card {
+      background: #ffffff;
+      border: 2.5px solid #4f46e5;
+      border-radius: 20px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.14);
+    }
+    .score-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      font-weight: 900;
+      color: #1e1b4b;
+    }
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .score-cell {
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 9px 6px;
+    }
+    .score-num {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #1e1b4b;
+    }
+    .score-num.ok { color: #15803d; }
+    .score-num.pts { color: #1d4ed8; }
+    .score-lbl {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .btn-lanjut-lv2 {
+      width: 100%;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #451a03;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 1.04rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(245, 158, 11, 0.35);
+    }
+
+    /* FOOTER NAVIGASI HALAMAN */
+    .page-footer {
+      background: #ffffff;
+      border-top: 2px solid #e2e8f0;
+      padding: 11px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      background: #1e1b4b;
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .nav-btn:disabled {
+      background: #cbd5e1;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+    .nav-btn.next-accent {
+      background: #0284c7;
+    }
+
+    /* POP-UP BENAR / SALAH */
+    .popup-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.78);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 95;
+    }
+    .popup-box {
+      width: 100%;
+      max-width: 370px;
+      background: #ffffff;
+      border-radius: 22px;
+      padding: 22px 18px;
+      text-align: center;
+      box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5);
+    }
+    .popup-emoji { font-size: 2.8rem; margin-bottom: 8px; }
+    .popup-title { margin: 0 0 8px; font-size: 1.42rem; font-weight: 900; }
+    .popup-title.ok { color: #15803d; }
+    .popup-title.no { color: #b91c1c; }
+    .popup-msg {
+      margin: 0 0 16px;
+      font-size: 0.95rem;
+      color: #334155;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .popup-btn {
+      width: 100%;
+      background: #1e1b4b;
+      color: #fde047;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.96rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="book-frame">
+    <div class="book-header">
+      <div class="top-bar">
+        <span class="page-indicator" id="pageIndicator">Halaman 1 / 7</span>
+        <div class="top-right-group">
+          <button class="btn-bgm-toggle" id="btnBgmToggle" onclick="toggleMusikLatar()">🎵 Musik: ON</button>
+          <span class="student-tag" id="studentTag">Murid SMKN 4 • Kelas X</span>
+        </div>
+      </div>
+      <h1>Bilangan Berpangkat</h1>
+      <p class="header-sub">
+        Pahami materi singkat &amp; kerjakan 5 latihan sebelum menghadapi kecepatan tinggi dan soal 30 detik di Level 2!
+      </p>
+    </div>
+
+    <div class="dots-strip" id="dotsStrip"></div>
+
+    <div class="page-body" id="pageBody"></div>
+
+    <div class="page-footer">
+      <button class="nav-btn" id="btnPrevPage" onclick="pindahHalaman(-1)">← Sebelumnya</button>
+      <button class="nav-btn next-accent" id="btnNextPage" onclick="pindahHalaman(1)">Berikutnya →</button>
+    </div>
+  </div>
+
+  <!-- POP-UP BENAR / SALAH -->
+  <div class="popup-backdrop" id="popupBackdrop">
+    <div class="popup-box">
+      <div class="popup-emoji" id="popupEmoji">🎉</div>
+      <h3 class="popup-title ok" id="popupTitle">BENAR!</h3>
+      <p class="popup-msg" id="popupMsg">Jawabanmu tepat!</p>
+      <button class="popup-btn" onclick="tutupPopup()">📖 Lihat Pembahasan</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const namaMurid = params.get("nama") || localStorage.getItem("kabur_nama") || "Murid SMKN 4";
+    const kelasMurid = params.get("kelas") || localStorage.getItem("kabur_kelas") || "Kelas X";
+    localStorage.setItem("kabur_nama", namaMurid);
+    localStorage.setItem("kabur_kelas", kelasMurid);
+    document.getElementById("studentTag").textContent = `${namaMurid} • ${kelasMurid}`;
+
+    // =========================================================================
+    // MUSIK LATAR SEMANGAT & LEMBUT — LANGSUNG AKTIF SAAT HALAMAN DIBUKA
+    // Otomatis berhenti saat tombol Penjelasan Suara Bu Rina diklik
+    // =========================================================================
+    let audioCtx = null;
+    let bgmTimer = null;
+    let bgmEnabled = true;
+    let bgmPausedForVoice = false;
+    let stepIndex = 0;
+
+    // Pola nada semangat & ceria (tangga nada mayor)
+    const melodiSemangat = [
+      523.25, 659.25, 783.99, 1046.50, // C5, E5, G5, C6
+      880.00, 783.99, 659.25, 783.99,  // A5, G5, E5, G5
+      587.33, 739.99, 880.00, 739.99,  // D5, F#5, A5, F#5
+      659.25, 783.99, 987.77, 783.99   // E5, G5, B5, G5
+    ];
+
+    function mainkanNadaLembut(freq) {
+      if (!audioCtx || audioCtx.state !== "running") return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now);
+
+      // Cukup terdengar namun tetap lembut agar tidak mengganggu konsentrasi membaca
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.045, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.36);
+    }
+
+    function mulaiMusikLatar() {
+      if (!bgmEnabled || bgmPausedForVoice) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      if (!audioCtx) {
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
+
+      if (!bgmTimer) {
+        // Mainkan nada pertama segera agar langsung terasa hidup
+        mainkanNadaLembut(melodiSemangat[stepIndex % melodiSemangat.length]);
+        stepIndex++;
+
+        bgmTimer = setInterval(() => {
+          if (!bgmEnabled || bgmPausedForVoice) return;
+          if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume().catch(() => {});
+          }
+          const freq = melodiSemangat[stepIndex % melodiSemangat.length];
+          mainkanNadaLembut(freq);
+          stepIndex++;
+        }, 420);
+      }
+    }
+    function hentikanMusikLatar() {
+      if (bgmTimer) {
+        clearInterval(bgmTimer);
+        bgmTimer = null;
+      }
+    }
+
+    function updateTombolMusik() {
+      const btn = document.getElementById("btnBgmToggle");
+      if (!btn) return;
+      if (!bgmEnabled) {
+        btn.classList.add("muted");
+        btn.textContent = "🔇 Musik: OFF";
+      } else if (audioCtx && audioCtx.state === "running") {
+        btn.classList.remove("muted");
+        btn.textContent = "🎵 Musik: ON";
+      } else {
+        btn.classList.remove("muted");
+        btn.textContent = "🔊 Klik Untuk Musik";
+      }
+    }
+
+    function toggleMusikLatar() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!audioCtx && AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+
+      // Jika musik belum berjalan karena terkunci autoplay, aktifkan dulu tanpa mematikan
+      if (bgmEnabled && audioCtx && audioCtx.state !== "running") {
+        bgmPausedForVoice = false;
+        audioCtx.resume().then(() => {
+          mulaiMusikLatar();
+          updateTombolMusik();
+        }).catch(() => {});
+        return;
+      }
+
+      bgmEnabled = !bgmEnabled;
+      if (bgmEnabled) {
+        bgmPausedForVoice = false;
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+        mulaiMusikLatar();
+      } else {
+        hentikanMusikLatar();
+      }
+      updateTombolMusik();
+    }
+
+    // Aktifkan musik saat pertama kali murid menyentuh/klik halaman (sesuai kebijakan browser)
+    document.addEventListener("pointerdown", () => {
+      if (bgmEnabled && !bgmPausedForVoice) {
+        mulaiMusikLatar();
+      }
+    }, { once: true });
+
+    const FALLBACK_GURU_SVG = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="58" fill="#fef3c7"/>
+        <path d="M34 38 Q60 12 86 38 L92 64 L28 64 Z" fill="#b45309"/>
+        <circle cx="60" cy="52" r="22" fill="#fde68a" stroke="#78350f" stroke-width="2.5"/>
+        <circle cx="52" cy="50" r="3" fill="#1e293b"/>
+        <circle cx="68" cy="50" r="3" fill="#1e293b"/>
+        <path d="M53 60 Q60 66 67 60" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M36 96 L48 76 L72 76 L84 96 Z" fill="#1d4ed8"/>
+        <path d="M44 96 L36 114 M76 96 L86 112" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+    `);
+
+    const pesanAtasHalaman = {
+      1: "“Selamat ya sudah menuntaskan Level 1! Baca dulu 2 sifat pangkat di halaman 1 ini sebelum lanjut ke halaman berikutnya.”",
+      2: "“Lanjut ke 2 sifat berikutnya! Perhatikan pangkat yang dipangkatkan serta pangkat nol dan negatif ya.”",
+      3: "“Sekarang waktunya Latihan Soal 1! Jawab dulu, lalu klik tombol suara kalau mau dengar penjelasan Bu Rina.”",
+      4: "“Masuk ke Latihan Soal 2! Ingat aturan pembagian pangkat dengan basis sama, jangan sampai tertukar.”",
+      5: "“Latihan Soal 3 hadir! Fokus pada pangkat di dalam dan luar kurung—kalikan atau tambahkan ya?”",
+      6: "“Latihan Soal 4 nih! Hati-hati jebakan klasik pangkat nol dan pangkat negatif.”",
+      7: "“Soal terakhir (Latihan 5)! Ceritanya dekat sama kehidupan sehari-hari—cek skor kamu lalu gas ke Level 2!”"
+    };
+
+    const soalLatihan = [
+      {
+        no: 1,
+        kontekstual: false,
+        teks: "Sederhanakan bentuk 2³ × 2⁴ adalah ...",
+        opsi: ["2⁷", "2¹²", "4⁷", "2¹"],
+        kunci: "2⁷",
+        audioFile: "audio/suara-lv2-soal1.mp3",
+        popBenar: "Mantap! Pangkatnya langsung dijumlahkan, Bu Rina bangga!",
+        popSalah: "Waduh, hampir terkecoh! Kalau basis sama dan dikali, pangkatnya ditambah ya.",
+        suaraTeks: "Eits, basisnya sama-sama dua dan dikali ya, bukan dijumlahkan dari khayalan! Tiga tambah empat jadi tujuh, hasilnya dua pangkat tujuh. Santai, jangan sampai salah pencet.",
+        pembahasanHtml: `
+          <strong>📝 Pembahasan Tertulis:</strong>
+          <ol>
+            <li>Basisnya sama-sama <strong>2</strong> dengan operasi perkalian.</li>
+            <li>Gunakan sifat <strong>aᵐ × aⁿ = aᵐ⁺ⁿ</strong>.</li>
+            <li>Hitung: <code>2³ × 2⁴ = 2³⁺⁴ = 2⁷</code>.</li>
+          </ol>
+          <div class="canda-box">💬 Canda Bu Rina: “Basisnya sama-sama dua dan dikali ya, bukan dijumlahkan dari khayalan!”</div>
+        `
+      },
+      {
+        no: 2,
+        kontekstual: false,
+        teks: "Hasil dari 5⁶ : 5² dalam bentuk pangkat adalah ...",
+        opsi: ["5³", "5⁴", "5⁸", "1⁴"],
+        kunci: "5⁴",
+        audioFile: "audio/suara-lv2-soal2.mp3",
+        popBenar: "Cakep! Tidak terjebak membagi pangkatnya!",
+        popSalah: "Eits, jangan dibagi 6 : 2 ya! Kalau pembagian basis sama, pangkatnya dikurangi.",
+        suaraTeks: "Nah, kalau dibagi dan basisnya sama, pangkatnya dikurangi ya—bukan dibagi lalu nangis. Enam kurang dua itu empat, jadi lima pangkat empat.",
+        pembahasanHtml: `
+          <strong>📝 Pembahasan Tertulis:</strong>
+          <ol>
+            <li>Basisnya sama-sama <strong>5</strong> dengan operasi pembagian.</li>
+            <li>Gunakan sifat <strong>aᵐ : aⁿ = aᵐ⁻ⁿ</strong>.</li>
+            <li>Hitung: <code>5⁶ : 5² = 5⁶⁻² = 5⁴</code>.</li>
+          </ol>
+          <div class="canda-box">💬 Canda Bu Rina: “Kalau dibagi dan basisnya sama, pangkatnya dikurangi ya—bukan dibagi lalu nangis.”</div>
+        `
+      },
+      {
+        no: 3,
+        kontekstual: false,
+        teks: "Bentuk sederhana dari (3²)³ adalah ...",
+        opsi: ["3⁵", "3⁶", "9⁶", "3⁸"],
+        kunci: "3⁶",
+        audioFile: "audio/suara-lv2-soal3.mp3",
+        popBenar: "Top! Pangkat di dalam dan luar kurung langsung dikalikan!",
+        popSalah: "Hati-hati! Pangkat yang dipangkatkan lagi itu dikalikan, bukan ditambah.",
+        suaraTeks: "Pangkat di dalam kurung ketemu pangkat di luar, ini waktunya dikalikan! Dua kali tiga sama dengan enam, hasilnya tiga pangkat enam. Ingat, jangan malah ditambah.",
+        pembahasanHtml: `
+          <strong>📝 Pembahasan Tertulis:</strong>
+          <ol>
+            <li>Gunakan sifat pangkat dipangkatkan: <strong>(aᵐ)ⁿ = aᵐ×ⁿ</strong>.</li>
+            <li>Kalikan pangkatnya: <code>2 × 3 = 6</code>.</li>
+            <li>Hasil sederhananya: <strong>3⁶</strong>.</li>
+          </ol>
+          <div class="canda-box">💬 Canda Bu Rina: “Pangkat di dalam kurung ketemu pangkat di luar, ini waktunya dikalikan—jangan malah ditambah!”</div>
+        `
+      },
+      {
+        no: 4,
+        kontekstual: false,
+        teks: "Nilai dari 7⁰ + 2⁻² adalah ...",
+        opsi: ["1 ¼", "1 ½", "2 ¼", "¾"],
+        kunci: "1 ¼",
+        audioFile: "audio/suara-lv2-soal4.mp3",
+        popBenar: "Luar biasa! Aman dari jebakan pangkat nol maupun pangkat negatif!",
+        popSalah: "Kena jebakan klasik nih! Ingat 7⁰ hasilnya 1, bukan 0.",
+        suaraTeks: "Hati-hati jebakan klasik! Angka apa pun—selain nol—kalau pangkat nol hasilnya satu, bukan nol ya. Ditambah dua pangkat minus dua yang sama dengan seperempat, jadinya satu seperempat.",
+        pembahasanHtml: `
+          <strong>📝 Pembahasan Tertulis:</strong>
+          <ol>
+            <li>Ubah pangkat nol: <code>7⁰ = 1</code>.</li>
+            <li>Ubah pangkat negatif: <code>2⁻² = 1/2² = 1/4</code>.</li>
+            <li>Jumlahkan: <code>1 + 1/4 = 1 ¼</code>.</li>
+          </ol>
+          <div class="canda-box">💬 Canda Bu Rina: “Hati-hati jebakan klasik! Angka apa pun selain nol kalau pangkat nol hasilnya satu, bukan nol ya.”</div>
+        `
+      },
+      {
+        no: 5,
+        kontekstual: true,
+        teks: "Seorang murid tergiur pinjaman online karena ingin cepat beli barang konsumtif yang diinginkan tanpa menabung dulu. Setiap kali terlambat bayar, besar hutang yang tercatat mengikuti pola 3ⁿ (dalam ribuan rupiah) pada keterlambatan ke-n. Berapa besar hutang pada keterlambatan ke-3?",
+        opsi: ["Rp9.000", "Rp18.000", "Rp27.000", "Rp81.000"],
+        kunci: "Rp27.000",
+        audioFile: "audio/suara-lv2-soal5-pinjol.mp3",
+        popBenar: "Mantap! Kamu bisa melihat betapa cepatnya hutang akibat keinginan instan membesar.",
+        popSalah: "Awas keliru! 3³ itu artinya 3 × 3 × 3, bukan 3 × 3 ya.",
+        suaraTeks: "Nah, kelihatan kan! Tiga pangkat tiga itu dua puluh tujuh, bukan sembilan. Gara-gara pengin buru-buru beli barang konsumtif lewat pinjol, kalau telat bayar hutangnya bisa cepat membesar bikin pusing. Mending ditabung pelan-pelan biar belinya lega dan hatinya tenang!",
+        pembahasanHtml: `
+          <strong>📝 Pembahasan Tertulis:</strong>
+          <ol>
+            <li>Hitung <code>3³</code> pada keterlambatan ke-3: <code>3 × 3 × 3 = 27</code>.</li>
+            <li>Kalikan dengan satuan ribuan rupiah: <code>27 × Rp1.000 = Rp27.000</code>.</li>
+            <li><strong>Pesan Bijak:</strong> Membeli barang konsumtif lewat pinjol lalu terlambat bayar membuat hutang cepat membengkak. Lebih aman menabung dulu sebelum membeli keinginan.</li>
+          </ol>
+          <div class="canda-box">💬 Canda Bu Rina: “Gara-gara pengin buru-buru beli barang konsumtif lewat pinjol, kalau telat bayar hutangnya bisa cepat membesar bikin pusing. Mending ditabung pelan-pelan!”</div>
+        `
+      }
+    ];
+
+    const TOTAL_HALAMAN = 7;
+    let halamanAktif = 1;
+    const jawabanMurid = {};
+    const pembahasanTerbuka = {};
+    let pendingNo = null;
+    let currentAudio = null;
+
+    function hentikanSuaraDanLanjutkanMusik(lanjutMusik = true) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+      }
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      const btnPlay = document.getElementById("btnPlaySuara");
+      if (btnPlay) {
+        btnPlay.classList.remove("playing");
+        btnPlay.textContent = "🔊 Penjelasan Suara Bu Rina";
+      }
+
+      if (lanjutMusik) {
+        bgmPausedForVoice = false;
+        if (bgmEnabled) mulaiMusikLatar();
+      }
+    }
+
+    // Saat tombol penjelasan suara Bu Rina diklik: musik latar langsung berhenti
+    function putarSuara(noSoal) {
+      const item = soalLatihan[noSoal - 1];
+      if (!item) return;
+
+      hentikanSuaraDanLanjutkanMusik(false);
+      bgmPausedForVoice = true;
+      hentikanMusikLatar();
+
+      const btnPlay = document.getElementById("btnPlaySuara");
+      if (item.audioFile) {
+        currentAudio = new Audio(item.audioFile);
+        if (btnPlay) {
+          btnPlay.classList.add("playing");
+          btnPlay.textContent = "🔊 Memutar Suara Bu Rina...";
+        }
+        currentAudio.onended = () => hentikanSuaraDanLanjutkanMusik(true);
+        currentAudio.play().catch(() => {
+          bicaraTeks(item.suaraTeks, () => hentikanSuaraDanLanjutkanMusik(true));
+        });
+        return;
+      }
+      bicaraTeks(item.suaraTeks, () => hentikanSuaraDanLanjutkanMusik(true));
+    }
+
+    function bicaraTeks(teks, onDone) {
+      if ("speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(teks);
+        u.lang = "id-ID";
+        u.rate = 1.0;
+        if (onDone) u.onend = onDone;
+        window.speechSynthesis.speak(u);
+      } else if (onDone) {
+        onDone();
+      }
+    }
+
+    function guruBannerHtml(noHal) {
+      return `
+        <div class="guru-banner">
+          <div class="guru-avatar-wrap">
+            <img src="bu-rina.png" alt="Bu Rina" onerror="this.onerror=null;this.src='${FALLBACK_GURU_SVG}'" />
+          </div>
+          <p class="guru-speech">${pesanAtasHalaman[noHal]}</p>
+        </div>
+      `;
+    }
+
+    function pilihOpsi(noSoal, pilihan) {
+      if (jawabanMurid[noSoal] !== undefined) return;
+      const item = soalLatihan[noSoal - 1];
+      const benar = pilihan === item.kunci;
+      jawabanMurid[noSoal] = { pilihan, benar };
+
+      pendingNo = noSoal;
+      document.getElementById("popupEmoji").textContent = benar ? "🎉" : "😅";
+      const t = document.getElementById("popupTitle");
+      t.textContent = benar ? "BENAR!" : "KURANG TEPAT!";
+      t.className = `popup-title ${benar ? "ok" : "no"}`;
+      document.getElementById("popupMsg").textContent = benar
+        ? item.popBenar
+        : `${item.popSalah} (Jawaban benar: ${item.kunci})`;
+      document.getElementById("popupBackdrop").style.display = "flex";
+    }
+
+    function tutupPopup() {
+      document.getElementById("popupBackdrop").style.display = "none";
+      if (pendingNo !== null) {
+        pembahasanTerbuka[pendingNo] = true;
+        pendingNo = null;
+        renderHalaman();
+      }
+    }
+
+    function hitungSkor() {
+      const terjawab = Object.keys(jawabanMurid).length;
+      const betul = Object.values(jawabanMurid).filter(x => x.benar).length;
+      const nilai = Math.round((betul / soalLatihan.length) * 100);
+      return { terjawab, betul, nilai };
+    }
+
+    function renderDots() {
+      const strip = document.getElementById("dotsStrip");
+      strip.innerHTML = "";
+      for (let p = 1; p <= TOTAL_HALAMAN; p++) {
+        const dot = document.createElement("button");
+        dot.className = "page-dot";
+        if (p === halamanAktif) dot.classList.add("active");
+        else if (p >= 3 && jawabanMurid[p - 2] !== undefined) dot.classList.add("done");
+        dot.title = `Halaman ${p}`;
+        dot.onclick = () => {
+          hentikanSuaraDanLanjutkanMusik(true);
+          halamanAktif = p;
+          renderHalaman();
+        };
+        strip.appendChild(dot);
+      }
+    }
+
+    function renderHalaman() {
+      document.getElementById("pageIndicator").textContent = `Halaman ${halamanAktif} / ${TOTAL_HALAMAN}`;
+      const body = document.getElementById("pageBody");
+      body.scrollTop = 0;
+
+      if (halamanAktif === 1) {
+        body.innerHTML = `
+          ${guruBannerHtml(1)}
+          <div class="sec-head">
+            <h2>1. Materi Singkat</h2>
+            <span class="sec-pill">Sifat Utama (1/2)</span>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-top">
+              <span class="rule-title">Perkalian Basis Sama</span>
+              <span class="formula-badge">aᵐ × aⁿ = aᵐ⁺ⁿ</span>
+            </div>
+            <p class="rule-desc">Jika angka dasarnya (basis) sama lalu dikalikan, pangkatnya cukup dijumlahkan.</p>
+            <div class="rule-example">Contoh: 2³ × 2² = 2³⁺² = 2⁵ = 32</div>
+          </div>
+
+          <div class="rule-card amber">
+            <div class="rule-top">
+              <span class="rule-title">Pembagian Basis Sama</span>
+              <span class="formula-badge">aᵐ : aⁿ = aᵐ⁻ⁿ</span>
+            </div>
+            <p class="rule-desc">Jika basisnya sama lalu dibagi, pangkat pembilang dikurangi pangkat penyebut.</p>
+            <div class="rule-example">Contoh: 3⁵ : 3² = 3⁵⁻² = 3³ = 27</div>
+          </div>
+        `;
+      } else if (halamanAktif === 2) {
+        body.innerHTML = `
+          ${guruBannerHtml(2)}
+          <div class="sec-head">
+            <h2>1. Materi Singkat</h2>
+            <span class="sec-pill">Sifat Utama (2/2)</span>
+          </div>
+
+          <div class="rule-card emerald">
+            <div class="rule-top">
+              <span class="rule-title">Pangkat Dipangkatkan</span>
+              <span class="formula-badge">(aᵐ)ⁿ = aᵐ×ⁿ</span>
+            </div>
+            <p class="rule-desc">Bentuk pangkat yang berada di dalam kurung lalu dipangkatkan lagi, pangkatnya dikalikan.</p>
+            <div class="rule-example">Contoh: (2²)³ = 2²×³ = 2⁶ = 64</div>
+          </div>
+
+          <div class="rule-card rose">
+            <div class="rule-top">
+              <span class="rule-title">Pangkat Nol &amp; Pangkat Negatif</span>
+              <span class="formula-badge">a⁰ = 1 &nbsp;|&nbsp; a⁻ⁿ = 1/aⁿ</span>
+            </div>
+            <p class="rule-desc">Bilangan bukan nol berpangkat 0 hasilnya selalu 1; pangkat negatif berarti kebalikan pangkat positif.</p>
+            <div class="rule-example">Contoh: 5⁰ = 1 &nbsp;dan&nbsp; 2⁻² = 1/2² = 1/4</div>
+          </div>
+        `;
+      } else {
+        const noSoal = halamanAktif - 2;
+        const item = soalLatihan[noSoal - 1];
+        const status = jawabanMurid[noSoal];
+
+        const badgeHtml = !status
+          ? `<span class="q-badge-ans">Belum dijawab</span>`
+          : status.benar
+            ? `<span class="q-badge-ans ok">✅ Benar</span>`
+            : `<span class="q-badge-ans no">❌ Kurang Tepat</span>`;
+
+        const opsiHtml = item.opsi.map(opt => {
+          let cls = "opt-btn";
+          let dis = "";
+          if (status) {
+            dis = "disabled";
+            if (opt === item.kunci) cls += " correct";
+            else if (opt === status.pilihan && !status.benar) cls += " wrong";
+          }
+          return `<button class="${cls}" ${dis} onclick="pilihOpsi(${noSoal}, '${opt.replace(/'/g, "\\'")}')">${opt}</button>`;
+        }).join("");
+
+        const showBahasan = pembahasanTerbuka[noSoal] ? "show" : "";
+        const sks = hitungSkor();
+
+        const penutupLevel2Html = noSoal === 5 ? `
+          <div class="score-card">
+            <h3>📊 Skor Latihan Kamu</h3>
+            <div class="score-grid">
+              <div class="score-cell">
+                <div class="score-num">${sks.terjawab} / 5</div>
+                <div class="score-lbl">Dijawab</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-num ok">${sks.betul}</div>
+                <div class="score-lbl">Betul</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-num pts">${sks.nilai}</div>
+                <div class="score-lbl">Skor</div>
+              </div>
+            </div>
+            <button class="btn-lanjut-lv2" onclick="menujuLevel2()">🚀 Lanjut ke Game Level 2</button>
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          ${guruBannerHtml(halamanAktif)}
+          <div class="question-box ${item.kontekstual ? "ctx-style" : ""}">
+            <div class="q-meta">
+              <span class="q-label ${item.kontekstual ? "ctx" : ""}">
+                ${item.kontekstual ? `Latihan ${noSoal} • Kontekstual` : `Latihan ${noSoal} dari 5`}
+              </span>
+              ${badgeHtml}
+            </div>
+            <div class="q-text">${item.teks}</div>
+            <div class="options-grid">${opsiHtml}</div>
+
+            <div class="pembahasan-wrap ${showBahasan}">
+              <div class="pembahasan-card">${item.pembahasanHtml}</div>
+              <div class="audio-row">
+                <button class="btn-audio" id="btnPlaySuara" onclick="putarSuara(${noSoal})">🔊 Penjelasan Suara Bu Rina</button>
+                <button class="btn-stop" onclick="hentikanSuaraDanLanjutkanMusik(true)">⏹ Stop Suara</button>
+              </div>
+            </div>
+          </div>
+          ${penutupLevel2Html}
+        `;
+      }
+
+      document.getElementById("btnPrevPage").disabled = halamanAktif === 1;
+      document.getElementById("btnNextPage").disabled = halamanAktif === TOTAL_HALAMAN;
+      renderDots();
+    }
+
+    function pindahHalaman(delta) {
+      hentikanSuaraDanLanjutkanMusik(true);
+      const target = halamanAktif + delta;
+      if (target >= 1 && target <= TOTAL_HALAMAN) {
+        halamanAktif = target;
+        renderHalaman();
+      }
+    }
+
+    function menujuLevel2() {
+      hentikanSuaraDanLanjutkanMusik(false);
+      hentikanMusikLatar();
+      const sks = hitungSkor();
+      const url = `level2.html?nama=${encodeURIComponent(namaMurid)}&kelas=${encodeURIComponent(kelasMurid)}&skorLatihan=${sks.nilai}`;
+      window.location.href = url;
+    }
+
+    updateTombolMusik();
+    renderHalaman();
+  </script>
+</body>
+</html>
