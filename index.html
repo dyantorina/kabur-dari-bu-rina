@@ -504,7 +504,6 @@
       filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.45));
       display: block;
     }
-    /* Posisi mulut tepat di bibir wajah Bu Rina (geser ke kanan atas) */
     .animated-mouth {
       position: absolute;
       top: 30.9%;
@@ -619,6 +618,20 @@
       font-weight: 900;
       cursor: pointer;
       box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      width: 100%;
+      max-width: 390px;
+    }
+    .btn-book-bridge {
+      margin-top: 8px;
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #ffffff;
+      border: 2px solid #bae6fd;
+      border-radius: 14px;
+      padding: 13px 18px;
+      font-size: 0.94rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(2, 132, 199, 0.35);
       width: 100%;
       max-width: 390px;
     }
@@ -813,6 +826,7 @@
       <div>Jarak Tercapai: <strong>1.500 m (Tamat Level 1)</strong></div>
       <div class="sync-pill" id="winSyncText"></div>
     </div>
+    <button class="btn-book-bridge" onclick="bukaBukuInteraktifLevel2()">📘 Lanjut ke Buku Interaktif &amp; Latihan Level 2</button>
     <button class="btn-primary" onclick="startGame()">🎉 Main Lagi Level 1</button>
     <button class="btn-secondary" onclick="keHalamanIdentitas()">👤 Ganti Nama / Kelas</button>
   </div>
@@ -846,6 +860,43 @@
       );
     }
 
+    function simpanIdentitasSiswa(nama, kelas) {
+      const namaSimpan = (nama || "").trim() || localStorage.getItem("kabur_nama") || "";
+      const kelasSimpan = (kelas || "").trim() || localStorage.getItem("kabur_kelas") || "";
+      if (namaSimpan) {
+        selectedNama = namaSimpan;
+        localStorage.setItem("kabur_nama", namaSimpan);
+      }
+      if (kelasSimpan) {
+        selectedKelas = kelasSimpan;
+        localStorage.setItem("kabur_kelas", kelasSimpan);
+      }
+      if (selectedNama) {
+        document.getElementById("hudPlayerName").textContent = `👤 ${selectedNama}`;
+        document.getElementById("studentAvatarTag").textContent = ambilNamaPalingSingkat(selectedNama);
+      }
+      if (selectedKelas) {
+        document.getElementById("hudPlayerClass").textContent = selectedKelas;
+      }
+    }
+
+    function muatIdentitasTersimpan() {
+      const savedNama = localStorage.getItem("kabur_nama") || "";
+      const savedKelas = localStorage.getItem("kabur_kelas") || "";
+      if (savedNama) {
+        selectedNama = savedNama;
+        document.getElementById("inputNamaLengkap").value = savedNama;
+        document.getElementById("hudPlayerName").textContent = `👤 ${savedNama}`;
+        document.getElementById("studentAvatarTag").textContent = ambilNamaPalingSingkat(savedNama);
+      }
+      if (savedKelas) {
+        selectedKelas = savedKelas;
+        const sel = document.getElementById("selectKelas");
+        if (sel) sel.value = savedKelas;
+        document.getElementById("hudPlayerClass").textContent = savedKelas;
+      }
+    }
+
     function validasiDanKePetunjuk() {
       const kelas = document.getElementById("selectKelas").value.trim();
       const namaMentah = document.getElementById("inputNamaLengkap").value;
@@ -859,13 +910,8 @@
       }
 
       errEl.style.display = "none";
-      selectedKelas = kelas;
-      selectedNama = nama;
-      document.getElementById("inputNamaLengkap").value = selectedNama;
-
-      document.getElementById("hudPlayerName").textContent = `👤 ${selectedNama}`;
-      document.getElementById("hudPlayerClass").textContent = selectedKelas;
-      document.getElementById("studentAvatarTag").textContent = ambilNamaPalingSingkat(selectedNama);
+      document.getElementById("inputNamaLengkap").value = nama;
+      simpanIdentitasSiswa(nama, kelas);
       document.getElementById("guideStudentGreeting").textContent = `${selectedNama} • ${selectedKelas}`;
 
       document.getElementById("startScreen").classList.add("hidden");
@@ -884,6 +930,21 @@
       document.getElementById("questionModal").style.display = "none";
       document.getElementById("startScreen").classList.remove("hidden");
       startLobbyBgmLoop();
+    }
+
+    // Penghubung dari layar tamat Level 1 menuju Buku Interaktif (progres materi tetap lokal)
+    function bukaBukuInteraktifLevel2() {
+      stopGameIntervals();
+      stopLobbyBgmLoop();
+      const namaFinal = selectedNama || localStorage.getItem("kabur_nama") || "Murid SMKN 4";
+      const kelasFinal = selectedKelas || localStorage.getItem("kabur_kelas") || "Kelas X";
+      simpanIdentitasSiswa(namaFinal, kelasFinal);
+
+      const targetUrl =
+        `buku-interaktif-level2.html?nama=${encodeURIComponent(namaFinal)}` +
+        `&kelas=${encodeURIComponent(kelasFinal)}` +
+        `&skorLv1=${encodeURIComponent(score)}`;
+      window.location.href = targetUrl;
     }
 
     async function kirimRekapOpsional(statusText, targetElId) {
@@ -1609,6 +1670,7 @@
         return;
       }
 
+      simpanIdentitasSiswa(selectedNama, selectedKelas);
       clearTimeout(sequenceTimer);
       clearFxPopups();
       stopGameIntervals();
@@ -1649,6 +1711,7 @@
       loopTimer = setInterval(gameLoop, 25);
     }
 
+    muatIdentitasTersimpan();
     startLobbyBgmLoop();
   </script>
 </body>
